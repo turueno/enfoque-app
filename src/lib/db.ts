@@ -406,11 +406,16 @@ export function getDb(): DatabaseSync {
 
     // Si se monta un volumen nuevo en la nube y la db aún no existe allí, copiar la semilla empaquetada
     if (!fs.existsSync(DB_PATH)) {
-      const defaultLocalDb = path.join(process.cwd(), 'data', 'enfoque.db');
-      if (fs.existsSync(defaultLocalDb) && DB_PATH !== defaultLocalDb) {
-        fs.copyFileSync(defaultLocalDb, DB_PATH);
-      } else if (!fs.existsSync(defaultLocalDb)) {
-        throw new Error(`Base de datos no encontrada en ${DB_PATH}. Ejecute 'npm run import-data' primero.`);
+      const candidates = [
+        path.join(process.cwd(), 'seed-data', 'enfoque.db'),
+        path.join(process.cwd(), 'data', 'enfoque.db'),
+        '/app/seed-data/enfoque.db'
+      ];
+      const foundSeed = candidates.find(p => fs.existsSync(p) && p !== DB_PATH);
+      if (foundSeed) {
+        fs.copyFileSync(foundSeed, DB_PATH);
+      } else {
+        throw new Error(`Base de datos no encontrada en ${DB_PATH}. No se encontró semilla en ${candidates.join(', ')}.`);
       }
     }
 

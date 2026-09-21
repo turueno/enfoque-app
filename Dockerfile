@@ -30,9 +30,10 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/data ./data
+COPY --from=builder /app/data ./seed-data
 COPY --from=builder /app/ENFOQUE_Airtable_7_tablas.xlsx ./ENFOQUE_Airtable_7_tablas.xlsx
 
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+RUN mkdir -p /app/data /app/seed-data && chown -R nextjs:nodejs /app/data /app/seed-data
 
 USER nextjs
 
