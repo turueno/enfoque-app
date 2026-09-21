@@ -32,11 +32,12 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/data ./data
 COPY --from=builder /app/data ./seed-data
 COPY --from=builder /app/ENFOQUE_Airtable_7_tablas.xlsx ./ENFOQUE_Airtable_7_tablas.xlsx
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-RUN mkdir -p /app/data /app/seed-data && chown -R nextjs:nodejs /app/data /app/seed-data
-
-USER nextjs
+RUN mkdir -p /app/data /app/seed-data && chmod -R 777 /app/data /app/seed-data
 
 EXPOSE 3001
 
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["npm", "run", "start", "--", "-p", "3001", "-H", "0.0.0.0"]
