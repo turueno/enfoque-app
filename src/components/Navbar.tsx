@@ -109,10 +109,10 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
               />
               <div className="border-l border-slate-300 pl-3">
                 <span className="font-bold text-[#191919] text-lg tracking-tight group-hover:text-[#F6911E] transition-colors">
-                  ENFOQUE
+                  {textosMap['nav.app_name'] || 'ENFOQUE'}
                 </span>
                 <span className="hidden sm:inline-block ml-2 text-xs text-slate-500 font-editorial border-l border-slate-300 pl-2">
-                  Gobernanza & Movimiento
+                  {textosMap['nav.app_subtitle'] || 'Gobernanza & Movimiento'}
                 </span>
               </div>
             </Link>
