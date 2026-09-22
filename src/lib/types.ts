@@ -24,6 +24,7 @@ export interface Frente {
   tipo_frente: string | null;
   owner_id_propuesto: string | null;
   owner_id_validado: string | null;
+  aporte_estrategico?: string | null;
   estado_definicion: string;
   estado_validacion: ValidationStatus;
   validado_por: string | null;
@@ -42,6 +43,7 @@ export interface Responsabilidad {
   estado_revision: string;
   estado_validacion: ValidationStatus;
   celda_origen: string | null;
+  comentario_propuesta?: string | null;
   validado_por: string | null;
   fecha_validacion: string | null;
   comentario_validacion: string | null;

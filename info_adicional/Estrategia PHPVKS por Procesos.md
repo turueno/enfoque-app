@@ -1,0 +1,16 @@
+&nbsp;
+
+&nbsp;
+
+| Proceso | Aporte clave a la estrategia: entender el target mejor que nadie&nbsp; |
+| ----- | ----- |
+| **Funnel de ventas y atención a clientes** | **Traducir el problema de negocio en una buena pregunta sobre personas.** Evitar que la investigación responda sólo al brief explícito y ayudar a detectar cuál es el verdadero malentendido que vale la pena resolver. Escuchar al cliente antes de proponer cómo investigar. Entender qué preocupa, qué necesita y qué está suponiendo el cliente para transformar una demanda comercial en una pregunta de investigación más fértil. |
+| **Operación de campo y seguimiento a costos de proyectos** | **Crear las condiciones para entender bien.** Asegurar que el contacto con la realidad del target ocurra en el contexto correcto, con la calidad, muestra, logística y ejecución necesarias para que las evidencias sean confiables. Cuidar la calidad de la realidad que observamos. Asegurar que el campo ocurra bien, en el contexto correcto y con disciplina de recursos, porque una buena interpretación empieza por evidencia confiable. |
+| **Operación de proyectos cuantitativos** | **Dimensionar el sentido.** Identificar qué patrones, tensiones y diferencias realmente discriminan, cuánto pesan y en quiénes se concentran. Dar escala y precisión a lo que creemos entender. Ejecutar estudios capaces de dimensionar tensiones, discriminar targets, validar hipótesis y revelar patrones relevantes. |
+| **Pipeline de Innovación y Go To Market** | **Descubrir la lógica detrás de lo dicho.** Ir más allá de la respuesta literal para reconstruir tensiones, contradicciones, códigos, contextos y formas de interpretar valor. afilar las hipótesis y asegurar que el target funcione como principio de realidad para el negocio. Convertir entendimiento en ofertas de servicios relevantes. Usar la comprensión del target para detectar dónde una idea puede ser relevante y bajo qué condiciones puede ganar sentido en el mercado. |
+| &nbsp; |  |
+| ***Evergreen*** **de conocimiento y contenidos** | **Convertir entendimiento en significado compartible.** Dar forma, lenguaje, estructura y narrativa al expertise para que revelar algo nuevo y modificar la manera de pensar del negocio. Hacer crecer la capacidad de entendimiento de toda la organización. Sin depender de entregables de un proyecto: catalizar capacidad de interpretación, enriquecer lo cuantitativo y agregar capas de sentido en las interacciones con cliente pertinentes**.** |
+| **Operación financiera y situación del negocio** | **Hacer sostenible el entendimiento.** Convertir recursos, tiempos y capacidades en decisiones que permitan investigar con profundidad sin perder viabilidad, disciplina ni foco. Convertir la ambición del laboratorio en una capacidad sostenible. Asegurar que recursos, rentabilidad, carga de trabajo y prioridades permitan sostener la profundidad y calidad del entendimiento. |
+| **Integración general y digital** | **Integrar las miradas en una interpretación propia.** Elevar las contribuciones de todas las áreas a una perspectiva coherente para la agencia. Conectar las piezas para construir una inteligencia común. Integrar personas, procesos, información y tecnología para que el conocimiento no quede fragmentado y aumentar la capacidad colectiva de entender. |
+
+&nbsp;

@@ -226,6 +226,11 @@ export default function MiEnfoqueClient({
                     <p className="text-slate-900 font-editorial leading-relaxed text-base">
                       "{r.responsabilidad_original}"
                     </p>
+                    {r.comentario_propuesta && (
+                      <div className="p-2 rounded bg-amber-50 border border-amber-200/70 text-[11px] text-amber-900 font-medium">
+                        💡 <strong>Calibración:</strong> {r.comentario_propuesta}
+                      </div>
+                    )}
                     <div className="text-xs text-slate-400 font-mono flex items-center justify-between pt-2 border-t border-slate-200/50">
                       <span>ID: {r.id} ({r.celda_origen || 'Excel'})</span>
                       <span className={r.estado_validacion === 'APROBADO' ? 'text-emerald-700 font-semibold' : 'text-[#F6911E] font-semibold'}>
@@ -266,9 +271,14 @@ export default function MiEnfoqueClient({
                         {r.rol_validado || r.rol_propuesto}
                       </span>
                     </div>
-                    <p className="text-slate-800 font-editorial leading-relaxed text-base">
+                    <p className="text-slate-900 font-editorial leading-relaxed text-base">
                       "{r.responsabilidad_original}"
                     </p>
+                    {r.comentario_propuesta && (
+                      <div className="p-2 rounded bg-amber-50 border border-amber-200/70 text-[11px] text-amber-900 font-medium">
+                        💡 <strong>Calibración:</strong> {r.comentario_propuesta}
+                      </div>
+                    )}
                     <div className="text-xs text-slate-400 font-mono flex items-center justify-between pt-2 border-t border-slate-200/50">
                       <span>ID: {r.id}</span>
                       <span>{r.estado_validacion}</span>

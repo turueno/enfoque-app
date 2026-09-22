@@ -138,6 +138,20 @@ export default async function FrenteDetailPage({
             </div>
           </div>
         </div>
+
+        {/* APORTE ESTRATÉGICO AL TARGET */}
+        {frente.aporte_estrategico && (
+          <div className="mt-4 bg-gradient-to-r from-orange-50/80 via-amber-50/50 to-white rounded-xl border border-orange-200/80 p-5 shadow-sm space-y-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-orange-800 flex items-center gap-1.5">
+                🎯 Aporte Clave a la Estrategia (Entender al Target Mejor que Nadie)
+              </span>
+            </div>
+            <p className="text-sm text-slate-800 font-editorial leading-relaxed pl-0.5">
+              {frente.aporte_estrategico}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ALERTAS DEL FRENTE (Requirement 11) */}
@@ -260,6 +274,12 @@ export default async function FrenteDetailPage({
                     <p className="text-slate-700 leading-relaxed">
                       {r.responsabilidad_original}
                     </p>
+
+                    {r.comentario_propuesta && (
+                      <div className="p-2 rounded bg-amber-50 border border-amber-200/70 text-[11px] text-amber-900 font-medium">
+                        💡 <strong>Calibración Owner:</strong> {r.comentario_propuesta}
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-200">
                       <span>Origen: {r.celda_origen}</span>

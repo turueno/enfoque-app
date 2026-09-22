@@ -421,6 +421,41 @@ export function getDb(): DatabaseSync {
 
     dbInstance = new DatabaseSync(DB_PATH);
     dbInstance.exec('PRAGMA foreign_keys = ON;');
+    
+    // Migraciones automáticas de esquema
+    try {
+      dbInstance.exec('ALTER TABLE frentes ADD COLUMN aporte_estrategico TEXT;');
+    } catch {}
+    try {
+      dbInstance.exec('ALTER TABLE responsabilidades ADD COLUMN comentario_propuesta TEXT;');
+    } catch {}
+
+    // Migraciones automáticas de datos (asegura que volúmenes persistentes en Railway reciban el contenido)
+    try {
+      const frentesAportes: Record<string, string> = {
+        'F01': 'Crear las condiciones para entender bien. Asegurar que el contacto con la realidad del target ocurra en el contexto correcto, con la calidad, muestra, logística y ejecución necesarias para que las evidencias sean confiables. Cuidar la calidad de la realidad que observamos porque una buena interpretación empieza por evidencia confiable.',
+        'F02': 'Descubrir la lógica detrás de lo dicho. Ir más allá de la respuesta literal para reconstruir tensiones, contradicciones, códigos, contextos y formas de interpretar valor. Afilar las hipótesis y asegurar que el target funcione como principio de realidad para el negocio. Convertir entendimiento en ofertas de servicios relevantes.',
+        'F03': 'Traducir el problema de negocio en una buena pregunta sobre personas. Evitar que la investigación responda sólo al brief explícito y ayudar a detectar cuál es el verdadero malentendido que vale la pena resolver. Escuchar al cliente antes de proponer cómo investigar para transformar una demanda comercial en una pregunta de investigación más fértil.',
+        'F04': 'Convertir entendimiento en significado compartible. Dar forma, lenguaje, estructura y narrativa al expertise para revelar algo nuevo y modificar la manera de pensar del negocio. Sin depender de entregables de un proyecto puntual: catalizar capacidad de interpretación, enriquecer lo cuantitativo y agregar capas de sentido en las interacciones con clientes pertinentes.',
+        'F05': 'Dimensionar el sentido. Identificar qué patrones, tensiones y diferencias realmente discriminan, cuánto pesan y en quiénes se concentran. Dar escala y precisión a lo que creemos entender. Ejecutar estudios capaces de dimensionar tensiones, discriminar targets, validar hipótesis y revelar patrones relevantes.',
+        'F06': 'Hacer sostenible el entendimiento. Convertir recursos, tiempos y capacidades en decisiones que permitan investigar con profundidad sin perder viabilidad, disciplina ni foco. Asegurar que recursos, rentabilidad, carga de trabajo y prioridades permitan sostener la profundidad y calidad del entendimiento.',
+        'F07': 'Integrar las miradas en una interpretación propia. Elevar las contribuciones de todas las áreas a una perspectiva coherente para la agencia. Conectar las piezas para construir una inteligencia común integrando personas, procesos, información y tecnología para que el conocimiento no quede fragmentado y aumente la capacidad colectiva de entender.'
+      };
+      const updateFrente = dbInstance.prepare('UPDATE frentes SET aporte_estrategico = ? WHERE id = ? AND (aporte_estrategico IS NULL OR aporte_estrategico = \'\')');
+      for (const [fid, ap] of Object.entries(frentesAportes)) {
+        updateFrente.run(ap, fid);
+      }
+
+      // Nuevas responsabilidades de calibración MFM
+      const insertResp = dbInstance.prepare(`
+        INSERT OR IGNORE INTO responsabilidades (id, frente_id, persona_id, responsabilidad_original, rol_propuesto, estado_revision, celda_origen, estado_validacion, comentario_propuesta)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      insertResp.run('R119', 'F01', 'P01', 'Desarrollo y perfeccionamiento de profiling', 'Owner / Ejecuta', 'Propuesto por Owner', 'Enfoque MFM.docx', 'POR VALIDAR', 'Propuesto directamente por Mónica Freyre en documento de calibración');
+      insertResp.run('R120', 'F01', 'P01', 'Desarrollar el drive de herramientas para tener un catálogo vivo de la operación', 'Owner / Ejecuta', 'Propuesto por Owner', 'Enfoque MFM.docx', 'POR VALIDAR', 'Propuesto directamente por Mónica Freyre en documento de calibración');
+      insertResp.run('R121', 'F01', 'P01', 'Probar diferentes alternativas para el uso de BDD interna', 'Owner / Ejecuta', 'Propuesto por Owner', 'Enfoque MFM.docx', 'POR VALIDAR', 'Propuesto directamente por Mónica Freyre en documento de calibración');
+    } catch {}
+
     initTextosSistema(dbInstance);
     initSnapshotsTable(dbInstance);
     initPrioridadesTable(dbInstance);

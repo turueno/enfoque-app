@@ -603,6 +603,17 @@ export function getAIReviewAnalysis(): AIReviewObservation[] {
     });
   }
 
+  // 7. Frontera operativa en proveedores cuantitativos (Alerta MFM vs Karen / F05)
+  observations.push({
+    id: 'ai-obs-proveedores-cuanti-mfm',
+    categoria: 'Autoridad',
+    titulo: 'Frontera operativa en gestión y desarrollo de proveedores cuantitativos',
+    elemento_detectado: 'Frentes F01 (Operación de campo) y F05 (Estudios cuantitativos)',
+    motivo: 'Mónica Freyre (P01) acotó su responsabilidad R003 a proveedores cualitativos e indicó expresamente "REVISAR EL TEMA DE PROVEEDORES CUANTITATIVOS". Debe definirse si la prospección y negociación de paneles/proveedores cuantitativos recae en Operaciones (P01) o en la Unidad Cuantitativa (Karen Heitler / P03).',
+    registros_relacionados: ['R003', 'F01', 'F05', 'P01', 'P03'],
+    pregunta_sugerida: '¿Quién es el responsable final (Owner) de la selección, negociación de tarifas y evaluación de proveedores y paneles cuantitativos?'
+  });
+
   return observations;
 }
 

@@ -56,8 +56,68 @@ export default function PrincipiosClient({
 
   return (
     <div className="space-y-8">
-      {/* 3 Principles Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* MANIFIESTO ESTRATÉGICO PROVOKERS 3.0 */}
+      <div className="bg-gradient-to-br from-[#191919] via-slate-900 to-[#2A2A2A] rounded-2xl p-6 sm:p-8 text-white shadow-lg border border-slate-800 space-y-6">
+        <div className="space-y-2 border-b border-white/10 pb-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFAA34]/20 border border-[#FFAA34]/30 text-[#FFAA34] text-xs font-bold tracking-wide uppercase">
+            <span>⚡ Estrategia PHPVKS 3.0</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-snug">
+            Valor agregado por ser capaces de entender el target de una iniciativa de negocio mejor que nadie
+          </h2>
+          <p className="text-slate-300 text-sm font-editorial leading-relaxed max-w-4xl">
+            Sostenemos una perspectiva propia, casi autoral, que orienta cada proceso de la agencia a través de tres premisas fundamentales:
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Premisa 1 */}
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2 hover:bg-white/10 transition-colors">
+            <span className="text-[11px] font-mono font-bold uppercase text-[#FFAA34] tracking-wider block">
+              01 · A quién entendemos
+            </span>
+            <h3 className="text-sm font-bold text-white">No existe un consumidor plano</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-editorial">
+              Más allá de reducirlo a perfil, NSE o demografía, comprendemos las formas concretas de ser alguien frente a una categoría u oferta. Si cada target posee su propio sentido común, es un <strong>sistema de interpretación en sí mismo</strong>: lee valor, riesgo, deseo y pertenencia bajo tensiones específicas.
+            </p>
+          </div>
+
+          {/* Premisa 2 */}
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2 hover:bg-white/10 transition-colors">
+            <span className="text-[11px] font-mono font-bold uppercase text-[#FFAA34] tracking-wider block">
+              02 · Cómo lo entendemos
+            </span>
+            <h3 className="text-sm font-bold text-white">Práctica interpretativa y crítica</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-editorial">
+              El oficio de entender al otro es más humano que técnico. Exige escuchar lo que el dato no dice sin negarlo, subordinándolo al contexto. Investigar es <strong>desobedecer el supuesto</strong> y ejercer una mirada crítica guiada por hipótesis afiladas para revelar el malentendido entre lo que el negocio cree evidente y lo que las personas reconocen como valor.
+            </p>
+          </div>
+
+          {/* Premisa 3 */}
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2 hover:bg-white/10 transition-colors">
+            <span className="text-[11px] font-mono font-bold uppercase text-[#FFAA34] tracking-wider block">
+              03 · Desde dónde entendemos
+            </span>
+            <h3 className="text-sm font-bold text-white">El target como principio de realidad</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-editorial">
+              Menos consumidor y más circunstancia: entendemos desde las tensiones, contradicciones y contextos que condicionan sus decisiones. No basta con preguntar qué opina, hay que comprender el mundo desde el que valora y decide. Confrontamos las aspiraciones del negocio con sus propios códigos de sentido.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Criterios Operativos Transversales */}
+      <div>
+        <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+          Criterios Operativos Rectores
+        </h2>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Criterios transversales no negociables aplicados al día a día de cada frente de trabajo.
+        </p>
+      </div>
+
+      {/* 4 Principles Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {principios.map((pr) => (
           <div
             key={pr.id}
