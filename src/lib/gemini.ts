@@ -7,10 +7,7 @@ export function getGeminiClient(): GoogleGenAI | null {
   if (!apiKey || apiKey.trim() === '') {
     return null;
   }
-  return new GoogleGenAI({ 
-    apiKey,
-    apiVersion: 'v1'
-  });
+  return new GoogleGenAI({ apiKey });
 }
 
 interface GroundedInterpretation {
@@ -64,15 +61,12 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
     pregunta_original: obs.pregunta_sugerida
   }));
 
-  // Modelos estándar v1 y previews
+  // Modelos activos recomendados oficialmente por la API de Google
   const candidateModels = [
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-2.0-flash',
-    'models/gemini-1.5-flash',
-    'models/gemini-1.5-pro',
-    'models/gemini-3.1-pro-preview',
-    'models/gemini-3.6-flash'
+    'gemini-3.6-flash',
+    'gemini-3.1-pro-preview',
+    'models/gemini-3.6-flash',
+    'models/gemini-3.1-pro-preview'
   ];
 
   let response: any = null;
