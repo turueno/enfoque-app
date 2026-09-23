@@ -69,17 +69,17 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
     pregunta_original: obs.pregunta_sugerida
   }));
 
-  // Modelos activos y soportados en la API de Google Gemini (Google AI Studio)
-  // Incluye variantes 'lite' y 'flash' que tienen pools de capacidad independientes para evitar 503
+  // Modelos activos y recomendados oficialmente por la API de Google Gemini para nuevas cuentas
+  // Google solicita explícitamente: "Please update your code to use models/gemini-3.1-pro-preview"
   const defaultModels = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
+    'gemini-3.1-pro-preview',
+    'models/gemini-3.1-pro-preview',
+    'gemini-3-flash-preview',
+    'models/gemini-3-flash-preview',
     'gemini-2.5-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-2.5-flash-lite',
-    'gemini-1.5-flash-8b',
-    'gemini-flash-latest',
-    'gemini-2.5-pro'
+    'models/gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash'
   ];
 
   const candidateModels = process.env.GEMINI_MODEL
