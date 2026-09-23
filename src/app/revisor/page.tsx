@@ -3,10 +3,14 @@ import { getAIReviewAnalysis } from '@/lib/queries';
 import RevisorClient from '@/components/RevisorClient';
 import Tooltip, { InfoTooltip } from '@/components/Tooltip';
 
+import { enrichObservationsWithAI, getGeminiClient } from '@/lib/gemini';
+
 export const dynamic = 'force-dynamic';
 
-export default function RevisorPage() {
-  const observations = getAIReviewAnalysis();
+export default async function RevisorPage() {
+  const rawObservations = getAIReviewAnalysis();
+  const hasAI = Boolean(getGeminiClient());
+  const observations = await enrichObservationsWithAI(rawObservations);
 
   return (
     <div className="space-y-6">
@@ -15,16 +19,16 @@ export default function RevisorPage() {
           Revisor Organizacional
         </span>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Revisar ENFOQUE con Asistente Heurístico
+          Revisar ENFOQUE con Agente IA Grounded
         </h1>
         <InfoTooltip
-          content="Detección de ambigüedades estructurales, dispersión operativa y cuellos de botella formuladas estrictamente como hipótesis para revisión y preguntas guía, sin sustituir el criterio humano del equipo."
+          content="Detección de ambigüedades estructurales, dispersión operativa y cuellos de botella calculados mediante reglas heurísticas deterministas e interpretados por IA generativa anclada para formular hipótesis y preguntas estratégicas."
           position="right"
           maxWidth="max-w-md"
         />
       </div>
 
-      <RevisorClient initialObservations={observations} />
+      <RevisorClient initialObservations={observations} initialHasAI={hasAI} />
     </div>
   );
 }

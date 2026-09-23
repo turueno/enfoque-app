@@ -147,6 +147,9 @@ export interface AIReviewObservation {
   registros_relacionados: string[];
   pregunta_sugerida: string;
   categoria: 'Ambigüedad' | 'Autoridad' | 'Dependencia' | 'Sobrecarga' | 'Métricas';
+  interpretacion_ia?: string;
+  impacto_gobernanza?: string;
+  origen?: 'ia_grounded' | 'heuristico';
 }
 
 export interface AuditoriaEntry {
