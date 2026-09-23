@@ -63,7 +63,7 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.6-flash',
       contents: `Analiza e interpreta las siguientes observaciones heurísticas de gobernanza organizacional de Provokers y genera el diagnóstico interpretativo y preguntas:\n\n${JSON.stringify(payload, null, 2)}`,
       config: {
         systemInstruction,
