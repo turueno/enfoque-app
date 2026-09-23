@@ -61,42 +61,68 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
     pregunta_original: obs.pregunta_sugerida
   }));
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: `Analiza e interpreta las siguientes observaciones heurísticas de gobernanza organizacional de Provokers y genera el diagnóstico interpretativo y preguntas:\n\n${JSON.stringify(payload, null, 2)}`,
-      config: {
-        systemInstruction,
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.ARRAY,
-          description: 'Lista de interpretaciones de gobernanza ancladas a las observaciones',
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              id: {
-                type: Type.STRING,
-                description: 'ID exacto de la observación heurística de origen'
+  // Lista de modelos en orden de prioridad para tolerar saturación temporal (código 503)
+  const candidateModels = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
+
+  let response: any = null;
+  let lastApiError: unknown = null;
+
+  for (const modelName of candidateModels) {
+    try {
+      response = await ai.models.generateContent({
+        model: modelName,
+        contents: `Analiza e interpreta las siguientes observaciones heurísticas de gobernanza organizacional de Provokers y genera el diagnóstico interpretativo y preguntas:\n\n${JSON.stringify(payload, null, 2)}`,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            description: 'Lista de interpretaciones de gobernanza ancladas a las observaciones',
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                id: {
+                  type: Type.STRING,
+                  description: 'ID exacto de la observación heurística de origen'
+                },
+                interpretacion_ia: {
+                  type: Type.STRING,
+                  description: 'Diagnóstico interpretativo de causa raíz y tensión operativa entre áreas o roles'
+                },
+                impacto_gobernanza: {
+                  type: Type.STRING,
+                  description: 'Riesgo concreto en la operación, agilidad o claridad del negocio si no se atiende'
+                },
+                pregunta_sugerida: {
+                  type: Type.STRING,
+                  description: 'Pregunta estratégica afilada para debatir y resolver en sesión de liderazgo'
+                }
               },
-              interpretacion_ia: {
-                type: Type.STRING,
-                description: 'Diagnóstico interpretativo de causa raíz y tensión operativa entre áreas o roles'
-              },
-              impacto_gobernanza: {
-                type: Type.STRING,
-                description: 'Riesgo concreto en la operación, agilidad o claridad del negocio si no se atiende'
-              },
-              pregunta_sugerida: {
-                type: Type.STRING,
-                description: 'Pregunta estratégica afilada para debatir y resolver en sesión de liderazgo'
-              }
-            },
-            required: ['id', 'interpretacion_ia', 'impacto_gobernanza', 'pregunta_sugerida']
-          }
-        },
-        temperature: 0.2 // Baja temperatura para estricta consistencia y precisión
+              required: ['id', 'interpretacion_ia', 'impacto_gobernanza', 'pregunta_sugerida']
+            }
+          },
+          temperature: 0.2
+        }
+      });
+      if (response && response.text) {
+        break; // Éxito con este modelo
       }
-    });
+    } catch (err) {
+      lastApiError = err;
+      console.warn(`Modelo ${modelName} no disponible, intentando siguiente fallback...`);
+    }
+  }
+
+  if (!response || !response.text) {
+    const errorMsg = lastApiError instanceof Error ? `${lastApiError.name}: ${lastApiError.message}` : String(lastApiError);
+    return observations.map(obs => ({
+      ...obs,
+      origen: 'heuristico',
+      motivo: `${obs.motivo} [Nota IA: ${errorMsg}]`
+    }));
+  }
+
+  try {
 
     const textResponse = response.text || '';
     let parsedJson: GroundedInterpretation[] = [];
