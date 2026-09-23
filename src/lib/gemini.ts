@@ -61,8 +61,8 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
     pregunta_original: obs.pregunta_sugerida
   }));
 
-  // Descubrir modelo dinámicamente o usar los recomendados
-  let candidateModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.6-flash'];
+  // Modelos activos recomendados por la API de Google
+  let candidateModels = ['gemini-3.1-pro-preview', 'gemini-3.6-flash'];
   try {
     const listResult = await ai.models.list();
     if (listResult) {
