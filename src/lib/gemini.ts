@@ -98,10 +98,28 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
       }
     });
 
-    const parsedJson = JSON.parse(response.text || '[]') as GroundedInterpretation[];
+    const textResponse = response.text || '';
+    let parsedJson: GroundedInterpretation[] = [];
+    try {
+      // Remover bloques markdown ```json ... ``` si el modelo los incluyó
+      const cleanJson = textResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+      parsedJson = JSON.parse(cleanJson);
+    } catch (e) {
+      console.error('Error parseando JSON de Gemini:', e, 'Respuesta recibida:', textResponse);
+      return observations.map(obs => ({
+        ...obs,
+        origen: 'heuristico',
+        motivo: `${obs.motivo} [Nota IA: Error parseando JSON - ${textResponse.slice(0, 100)}]`
+      }));
+    }
+
     const interpretationsMap = new Map<string, GroundedInterpretation>();
-    for (const item of parsedJson) {
-      interpretationsMap.set(item.id, item);
+    if (Array.isArray(parsedJson)) {
+      for (const item of parsedJson) {
+        if (item && item.id) {
+          interpretationsMap.set(item.id, item);
+        }
+      }
     }
 
     return observations.map(obs => {
