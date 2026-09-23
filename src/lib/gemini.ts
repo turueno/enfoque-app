@@ -61,27 +61,13 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
     pregunta_original: obs.pregunta_sugerida
   }));
 
-  // Modelos activos recomendados por la API de Google
-  let candidateModels = ['gemini-3.1-pro-preview', 'gemini-3.6-flash'];
-  try {
-    const listResult = await ai.models.list();
-    if (listResult) {
-      const activeGenModels: string[] = [];
-      for await (const m of listResult) {
-        if (m.name && (m.supportedActions?.includes('generateContent') || !m.supportedActions)) {
-          const cleanName = m.name.replace(/^models\//, '');
-          if (cleanName.includes('flash') || cleanName.includes('pro')) {
-            activeGenModels.push(cleanName);
-          }
-        }
-      }
-      if (activeGenModels.length > 0) {
-        candidateModels = [...activeGenModels, ...candidateModels];
-      }
-    }
-  } catch (e) {
-    console.warn('No se pudo listar modelos dinámicamente, usando lista estática:', e);
-  }
+  // Usar directamente los identificadores de recurso solicitados por la API
+  const candidateModels = [
+    'models/gemini-3.1-pro-preview',
+    'models/gemini-3.6-flash',
+    'gemini-3.1-pro-preview',
+    'gemini-3.6-flash'
+  ];
 
   let response: any = null;
   let lastApiError: unknown = null;
