@@ -17,6 +17,12 @@ interface GroundedInterpretation {
   pregunta_sugerida: string;
 }
 
+export interface EnrichResult {
+  observations: AIReviewObservation[];
+  modelUsed?: string;
+  error?: string;
+}
+
 /**
  * Enriquecimiento interpretativo de observaciones heurísticas mediante Gemini.
  * La IA NO inventa hechos ni anomalías: recibe las observaciones deterministas
@@ -25,11 +31,13 @@ interface GroundedInterpretation {
  */
 export async function enrichObservationsWithAI(
   observations: AIReviewObservation[]
-): Promise<AIReviewObservation[]> {
+): Promise<EnrichResult> {
   const ai = getGeminiClient();
   if (!ai || observations.length === 0) {
-    // Si no hay API key o no hay observaciones, se devuelven las heurísticas intactas
-    return observations.map(obs => ({ ...obs, origen: 'heuristico' }));
+    return {
+      observations: observations.map(obs => ({ ...obs, origen: 'heuristico' })),
+      error: !ai ? 'No se detectó GEMINI_API_KEY en las variables de entorno.' : undefined
+    };
   }
 
   const systemInstruction = `
@@ -61,16 +69,23 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
     pregunta_original: obs.pregunta_sugerida
   }));
 
-  // Modelos activos recomendados oficialmente por la API de Google
-  const candidateModels = [
-    'gemini-3.6-flash',
-    'gemini-3.1-pro-preview',
-    'models/gemini-3.6-flash',
-    'models/gemini-3.1-pro-preview'
+  // Modelos activos y soportados en la API de Google Gemini (Google AI Studio)
+  const defaultModels = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-pro',
+    'gemini-1.5-pro',
+    'gemini-flash-latest'
   ];
 
+  const candidateModels = process.env.GEMINI_MODEL
+    ? [process.env.GEMINI_MODEL, ...defaultModels]
+    : defaultModels;
+
   let response: any = null;
-  let lastApiError: unknown = null;
+  let lastApiError: string | null = null;
+  let successfulModel: string | undefined = undefined;
 
   for (const modelName of candidateModels) {
     try {
@@ -110,24 +125,27 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
         }
       });
       if (response && response.text) {
+        successfulModel = modelName;
         break; // Éxito con este modelo
       }
-    } catch (err) {
-      lastApiError = err;
-      console.warn(`Modelo ${modelName} no disponible, intentando siguiente fallback...`);
+    } catch (err: any) {
+      lastApiError = err?.message || String(err);
+      console.warn(`Modelo ${modelName} no disponible, intentando siguiente fallback...`, lastApiError);
     }
   }
 
   if (!response || !response.text) {
     console.error('Ningún modelo disponible respondió:', lastApiError);
-    return observations.map(obs => ({
-      ...obs,
-      origen: 'heuristico'
-    }));
+    return {
+      observations: observations.map(obs => ({
+        ...obs,
+        origen: 'heuristico'
+      })),
+      error: `No se pudo conectar con los modelos de Gemini: ${lastApiError || 'Respuesta vacía'}`
+    };
   }
 
   try {
-
     const textResponse = response.text || '';
     let parsedJson: GroundedInterpretation[] = [];
     try {
@@ -136,10 +154,14 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
       parsedJson = JSON.parse(cleanJson);
     } catch (e) {
       console.error('Error parseando JSON de Gemini:', e, 'Respuesta recibida:', textResponse);
-      return observations.map(obs => ({
-        ...obs,
-        origen: 'heuristico'
-      }));
+      return {
+        observations: observations.map(obs => ({
+          ...obs,
+          origen: 'heuristico'
+        })),
+        modelUsed: successfulModel,
+        error: 'El modelo respondió pero el formato JSON no pudo ser interpretado.'
+      };
     }
 
     const interpretationsMap = new Map<string, GroundedInterpretation>();
@@ -151,7 +173,7 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
       }
     }
 
-    return observations.map(obs => {
+    const enriched = observations.map(obs => {
       const interp = interpretationsMap.get(obs.id);
       if (interp) {
         return {
@@ -159,13 +181,22 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
           interpretacion_ia: interp.interpretacion_ia,
           impacto_gobernanza: interp.impacto_gobernanza,
           pregunta_sugerida: interp.pregunta_sugerida || obs.pregunta_sugerida,
-          origen: 'ia_grounded'
+          origen: 'ia_grounded' as const
         };
       }
-      return { ...obs, origen: 'heuristico' };
+      return { ...obs, origen: 'heuristico' as const };
     });
-  } catch (error) {
+
+    return {
+      observations: enriched,
+      modelUsed: successfulModel
+    };
+  } catch (error: any) {
     console.error('Error enriqueciendo observaciones con Gemini API:', error);
-    return observations.map(obs => ({ ...obs, origen: 'heuristico' }));
+    return {
+      observations: observations.map(obs => ({ ...obs, origen: 'heuristico' })),
+      modelUsed: successfulModel,
+      error: error?.message || 'Error al procesar la respuesta de Gemini'
+    };
   }
 }

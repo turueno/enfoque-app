@@ -12,21 +12,14 @@ export async function GET() {
     // 2. Verificar si Gemini está habilitado
     const hasAI = Boolean(getGeminiClient());
 
-    let lastError: string | null = null;
-    let observations = heuristicObservations;
-    if (hasAI) {
-      try {
-        observations = await enrichObservationsWithAI(heuristicObservations);
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : String(e);
-      }
-    }
+    const result = await enrichObservationsWithAI(heuristicObservations);
 
     return NextResponse.json({
       success: true,
       hasAI,
-      debugError: lastError,
-      observations
+      modelUsed: result.modelUsed,
+      error: result.error,
+      observations: result.observations
     });
   } catch (error) {
     console.error('Error en API /api/revisor/analizar:', error);

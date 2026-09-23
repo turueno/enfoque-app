@@ -3,16 +3,26 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { AIReviewObservation } from '@/lib/types';
-import { Sparkles, HelpCircle, RefreshCw, ArrowRight, ShieldCheck, Cpu } from 'lucide-react';
+import { Sparkles, HelpCircle, RefreshCw, ArrowRight, ShieldCheck, Cpu, AlertTriangle } from 'lucide-react';
+import { reanalizarAction } from '@/app/revisor/actions';
 
 interface RevisorClientProps {
   initialObservations: AIReviewObservation[];
   initialHasAI?: boolean;
+  initialModelUsed?: string;
+  initialError?: string;
 }
 
-export default function RevisorClient({ initialObservations, initialHasAI = false }: RevisorClientProps) {
+export default function RevisorClient({ 
+  initialObservations, 
+  initialHasAI = false,
+  initialModelUsed,
+  initialError 
+}: RevisorClientProps) {
   const [observations, setObservations] = useState(initialObservations);
   const [hasAI, setHasAI] = useState(initialHasAI);
+  const [modelUsed, setModelUsed] = useState(initialModelUsed);
+  const [apiError, setApiError] = useState<string | null>(initialError || null);
   const [activeFilter, setActiveFilter] = useState<string>('ALL');
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -25,17 +35,35 @@ export default function RevisorClient({ initialObservations, initialHasAI = fals
 
   const handleRefresh = async () => {
     setAnalyzing(true);
+    setApiError(null);
     try {
-      const res = await fetch('/api/revisor/analizar');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.observations) {
-          setObservations(data.observations);
-          setHasAI(Boolean(data.hasAI));
-        }
+      // 1. Intentar Server Action directa en el servidor
+      const data = await reanalizarAction();
+      if (data && data.success && data.observations) {
+        setObservations(data.observations);
+        setHasAI(Boolean(data.hasAI));
+        if (data.modelUsed) setModelUsed(data.modelUsed);
+        if (data.error) setApiError(data.error);
+        return;
       }
-    } catch (e) {
-      console.error('Error al actualizar análisis:', e);
+    } catch (actionErr) {
+      console.warn('Server action falló, probando API route:', actionErr);
+      try {
+        const res = await fetch('/api/revisor/analizar');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.observations) {
+            setObservations(data.observations);
+            setHasAI(Boolean(data.hasAI));
+            if (data.modelUsed) setModelUsed(data.modelUsed);
+            if (data.error) setApiError(data.error);
+          }
+        } else {
+          setApiError(`Error del servidor (${res.status}): No se pudo completar el re-análisis.`);
+        }
+      } catch (fetchErr) {
+        setApiError('Error de conexión al re-analizar. Por favor intenta de nuevo.');
+      }
     } finally {
       setAnalyzing(false);
     }
@@ -54,7 +82,7 @@ export default function RevisorClient({ initialObservations, initialHasAI = fals
             {hasAI ? (
               <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 text-[10px] font-medium">
                 <Cpu className="w-3 h-3 text-emerald-400" />
-                <span>Gemini 2.5 Activo (Grounded)</span>
+                <span>{modelUsed ? `Gemini Activo (${modelUsed})` : 'Gemini Activo (Grounded)'}</span>
               </span>
             ) : (
               <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-medium">
@@ -82,6 +110,28 @@ export default function RevisorClient({ initialObservations, initialHasAI = fals
           <span>{analyzing ? 'Analizando con IA...' : 'Re-analizar Diagnóstico'}</span>
         </button>
       </div>
+
+      {/* Alerta de diagnóstico en caso de incidencia con la API de Gemini */}
+      {apiError && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 text-xs flex items-start justify-between gap-3 shadow-xs">
+          <div className="flex items-start space-x-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold text-amber-950">Aviso del Asistente Gemini:</span>
+              <p className="text-amber-800 leading-relaxed font-mono text-[11px]">{apiError}</p>
+              <p className="text-amber-700 text-[11px]">
+                Mientras tanto, la plataforma muestra las observaciones exactas generadas por el motor analítico determinista.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setApiError(null)}
+            className="text-amber-600 hover:text-amber-900 font-bold px-2 py-0.5 text-xs rounded hover:bg-amber-100 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Category Pills */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">

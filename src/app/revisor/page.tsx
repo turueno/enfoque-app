@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export default async function RevisorPage() {
   const rawObservations = getAIReviewAnalysis();
   const hasAI = Boolean(getGeminiClient());
-  const observations = await enrichObservationsWithAI(rawObservations);
+  const { observations, modelUsed, error } = await enrichObservationsWithAI(rawObservations);
 
   return (
     <div className="space-y-6">
@@ -28,7 +28,12 @@ export default async function RevisorPage() {
         />
       </div>
 
-      <RevisorClient initialObservations={observations} initialHasAI={hasAI} />
+      <RevisorClient 
+        initialObservations={observations} 
+        initialHasAI={hasAI}
+        initialModelUsed={modelUsed}
+        initialError={error}
+      />
     </div>
   );
 }
