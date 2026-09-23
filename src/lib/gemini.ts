@@ -125,11 +125,10 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
   }
 
   if (!response || !response.text) {
-    const errorMsg = lastApiError instanceof Error ? `${lastApiError.name}: ${lastApiError.message}` : String(lastApiError);
+    console.error('Ningún modelo disponible respondió:', lastApiError);
     return observations.map(obs => ({
       ...obs,
-      origen: 'heuristico',
-      motivo: `${obs.motivo} [Nota IA: ${errorMsg}]`
+      origen: 'heuristico'
     }));
   }
 
@@ -145,8 +144,7 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
       console.error('Error parseando JSON de Gemini:', e, 'Respuesta recibida:', textResponse);
       return observations.map(obs => ({
         ...obs,
-        origen: 'heuristico',
-        motivo: `${obs.motivo} [Nota IA: Error parseando JSON - ${textResponse.slice(0, 100)}]`
+        origen: 'heuristico'
       }));
     }
 
@@ -173,13 +171,7 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
       return { ...obs, origen: 'heuristico' };
     });
   } catch (error) {
-    const errorMsg = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-    console.error('Error enriqueciendo observaciones con Gemini API:', errorMsg);
-    // Retornamos las observaciones marcadas pero propagamos el error para diagnóstico
-    return observations.map(obs => ({ 
-      ...obs, 
-      origen: 'heuristico',
-      motivo: `${obs.motivo} [Nota IA: ${errorMsg}]` 
-    }));
+    console.error('Error enriqueciendo observaciones con Gemini API:', error);
+    return observations.map(obs => ({ ...obs, origen: 'heuristico' }));
   }
 }
