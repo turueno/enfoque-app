@@ -70,13 +70,16 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
   }));
 
   // Modelos activos y soportados en la API de Google Gemini (Google AI Studio)
+  // Incluye variantes 'lite' y 'flash' que tienen pools de capacidad independientes para evitar 503
   const defaultModels = [
-    'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
-    'gemini-2.5-pro',
-    'gemini-1.5-pro',
-    'gemini-flash-latest'
+    'gemini-2.5-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-2.5-flash-lite',
+    'gemini-1.5-flash-8b',
+    'gemini-flash-latest',
+    'gemini-2.5-pro'
   ];
 
   const candidateModels = process.env.GEMINI_MODEL
@@ -86,6 +89,8 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
   let response: any = null;
   let lastApiError: string | null = null;
   let successfulModel: string | undefined = undefined;
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   for (const modelName of candidateModels) {
     try {
@@ -129,19 +134,48 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
         break; // Éxito con este modelo
       }
     } catch (err: any) {
-      lastApiError = err?.message || String(err);
+      const errStr = err?.message || String(err);
+      lastApiError = errStr;
       console.warn(`Modelo ${modelName} no disponible, intentando siguiente fallback...`, lastApiError);
+      // Si Google reporta sobrecarga temporal (503) o cuota (429), esperar brevemente antes de intentar el siguiente modelo
+      if (
+        errStr.includes('503') ||
+        errStr.includes('429') ||
+        errStr.includes('high demand') ||
+        errStr.includes('UNAVAILABLE')
+      ) {
+        await sleep(750);
+      }
     }
   }
 
   if (!response || !response.text) {
     console.error('Ningún modelo disponible respondió:', lastApiError);
+    let friendlyError = lastApiError || 'Respuesta vacía';
+    if (
+      friendlyError.includes('503') ||
+      friendlyError.includes('high demand') ||
+      friendlyError.includes('UNAVAILABLE')
+    ) {
+      friendlyError = 'Google Gemini reporta alta demanda temporal en sus servidores (Error 503). Por favor pulsa "Re-analizar Diagnóstico" en unos segundos.';
+    } else if (
+      friendlyError.includes('429') ||
+      friendlyError.includes('RESOURCE_EXHAUSTED')
+    ) {
+      friendlyError = 'Límite de peticiones por minuto alcanzado en Google Gemini (Error 429). Por favor espera un momento.';
+    } else if (
+      friendlyError.includes('API_KEY_INVALID') ||
+      friendlyError.includes('PERMISSION_DENIED')
+    ) {
+      friendlyError = 'La clave GEMINI_API_KEY no es válida o no tiene permisos habilitados en Google AI Studio.';
+    }
+
     return {
       observations: observations.map(obs => ({
         ...obs,
         origen: 'heuristico'
       })),
-      error: `No se pudo conectar con los modelos de Gemini: ${lastApiError || 'Respuesta vacía'}`
+      error: friendlyError
     };
   }
 
