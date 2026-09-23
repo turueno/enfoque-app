@@ -12,12 +12,20 @@ export async function GET() {
     // 2. Verificar si Gemini está habilitado
     const hasAI = Boolean(getGeminiClient());
 
-    // 3. Enriquecer con IA Grounded (o degradar a heurístico si no hay API key)
-    const observations = await enrichObservationsWithAI(heuristicObservations);
+    let lastError: string | null = null;
+    let observations = heuristicObservations;
+    if (hasAI) {
+      try {
+        observations = await enrichObservationsWithAI(heuristicObservations);
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e);
+      }
+    }
 
     return NextResponse.json({
       success: true,
       hasAI,
+      debugError: lastError,
       observations
     });
   } catch (error) {

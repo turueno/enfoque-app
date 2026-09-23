@@ -64,16 +64,7 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: `Analiza e interpreta las siguientes observaciones heurísticas de gobernanza:\n\n${JSON.stringify(payload, null, 2)}`
-            }
-          ]
-        }
-      ],
+      contents: `Analiza e interpreta las siguientes observaciones heurísticas de gobernanza organizacional de Provokers y genera el diagnóstico interpretativo y preguntas:\n\n${JSON.stringify(payload, null, 2)}`,
       config: {
         systemInstruction,
         responseMimeType: 'application/json',
@@ -127,8 +118,13 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
       return { ...obs, origen: 'heuristico' };
     });
   } catch (error) {
-    console.error('Error enriqueciendo observaciones con Gemini API:', error);
-    // En caso de error de red o cuota, degradación suave y transparente
-    return observations.map(obs => ({ ...obs, origen: 'heuristico' }));
+    const errorMsg = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    console.error('Error enriqueciendo observaciones con Gemini API:', errorMsg);
+    // Retornamos las observaciones marcadas pero propagamos el error para diagnóstico
+    return observations.map(obs => ({ 
+      ...obs, 
+      origen: 'heuristico',
+      motivo: `${obs.motivo} [Nota IA: ${errorMsg}]` 
+    }));
   }
 }
