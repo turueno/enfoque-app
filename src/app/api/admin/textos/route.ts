@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAllTextosSistema, updateTextoSistema, resetTextoSistema } from '@/lib/db';
-import { isUserAdmin } from '@/lib/auth';
+import { isAdminAuthenticated } from '@/lib/adminAuth';
 
 export async function GET() {
   try {
@@ -14,13 +14,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { clave, valor, usuario = 'Administrador', reset = false, userId, userEmail } = body;
-
-    // Verify Admin permission
-    if (!isUserAdmin(userId, userEmail)) {
-      return NextResponse.json({ error: 'Acceso denegado: solo administradores autorizados pueden modificar textos del sistema.' }, { status: 403 });
+    // Verificar sesión de administrador segura en el servidor
+    const isAuth = await isAdminAuthenticated();
+    if (!isAuth) {
+      return NextResponse.json({ error: 'Acceso denegado: se requiere sesión activa de administrador.' }, { status: 401 });
     }
+
+    const body = await req.json();
+    const { clave, valor, usuario = 'Administrador', reset = false } = body;
 
     if (!clave) {
       return NextResponse.json({ error: 'La clave de texto es obligatoria' }, { status: 400 });

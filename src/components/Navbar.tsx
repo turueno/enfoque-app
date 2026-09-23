@@ -19,8 +19,11 @@ import {
   Search,
   History,
   ChevronDown,
-  Settings
+  Settings,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
+import { isUserAdmin } from '@/lib/auth';
 
 interface NavbarProps {
   initialTextosMap?: Record<string, string>;
@@ -34,7 +37,12 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ total: number; items: { id: string; tipo: string; titulo: string; subtitulo: string; enlace: string }[] } | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsAdmin(isUserAdmin());
+  }, [pathname]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -174,14 +182,18 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
           {/* Settings button */}
           <Link
             href="/admin"
-            title="Administrador de Contenidos y Entidades (Ajustes)"
+            title={isAdmin ? "Panel de Administración (Sesión Activa)" : "Ajustes (Requiere acceso de Administrador)"}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border transition-all text-xs font-semibold ${
               pathname.startsWith('/admin')
                 ? 'bg-[#191919] text-white border-[#191919] shadow-sm'
                 : 'bg-white hover:bg-orange-50/80 border-slate-200 text-slate-700 hover:text-[#191919] hover:border-[#F6911E]/50'
             }`}
           >
-            <Settings className={`w-3.5 h-3.5 ${pathname.startsWith('/admin') ? 'text-[#F6911E]' : 'text-slate-500'}`} />
+            {isAdmin ? (
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            ) : (
+              <Lock className="w-3.5 h-3.5 text-slate-400" />
+            )}
             <span className="hidden sm:inline">Ajustes</span>
           </Link>
 

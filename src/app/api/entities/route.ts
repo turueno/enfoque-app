@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getDb, logAudit, queryOne } from '@/lib/db';
-import { isUserAdmin } from '@/lib/auth';
+import { isAdminAuthenticated } from '@/lib/adminAuth';
 
 /**
  * Creates a new organizational entity
  */
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { tipo, data, usuario = 'Usuario Google Workspace', userId, userEmail } = body;
-
-    if (!isUserAdmin(userId, userEmail)) {
-      return NextResponse.json({ error: 'Acceso denegado: solo administradores pueden dar de alta entidades.' }, { status: 403 });
+    const isAuth = await isAdminAuthenticated();
+    if (!isAuth) {
+      return NextResponse.json({ error: 'Acceso denegado: se requiere sesión activa de administrador.' }, { status: 401 });
     }
+
+    const body = await req.json();
+    const { tipo, data, usuario = 'Administrador' } = body;
 
     const db = getDb();
 
@@ -106,12 +107,13 @@ export async function POST(req: Request) {
  */
 export async function PUT(req: Request) {
   try {
-    const body = await req.json();
-    const { tipo, id, data, usuario = 'Usuario Google Workspace', userId, userEmail } = body;
-
-    if (!isUserAdmin(userId, userEmail)) {
-      return NextResponse.json({ error: 'Acceso denegado: solo administradores pueden editar entidades.' }, { status: 403 });
+    const isAuth = await isAdminAuthenticated();
+    if (!isAuth) {
+      return NextResponse.json({ error: 'Acceso denegado: se requiere sesión activa de administrador.' }, { status: 401 });
     }
+
+    const body = await req.json();
+    const { tipo, id, data, usuario = 'Administrador' } = body;
 
     if (!id || !tipo) {
       return NextResponse.json({ error: 'Tipo e ID son requeridos' }, { status: 400 });
@@ -260,16 +262,15 @@ export async function PUT(req: Request) {
  */
 export async function DELETE(req: Request) {
   try {
+    const isAuth = await isAdminAuthenticated();
+    if (!isAuth) {
+      return NextResponse.json({ error: 'Acceso denegado: se requiere sesión activa de administrador.' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const tipo = searchParams.get('tipo');
     const id = searchParams.get('id');
-    const usuario = searchParams.get('usuario') || 'Usuario Google Workspace';
-    const userId = searchParams.get('userId');
-    const userEmail = searchParams.get('userEmail');
-
-    if (!isUserAdmin(userId, userEmail)) {
-      return NextResponse.json({ error: 'Acceso denegado: solo administradores pueden eliminar entidades.' }, { status: 403 });
-    }
+    const usuario = searchParams.get('usuario') || 'Administrador';
 
     if (!id || !tipo) {
       return NextResponse.json({ error: 'Tipo e ID son requeridos' }, { status: 400 });

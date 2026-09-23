@@ -8,10 +8,17 @@ import {
   getAllPrincipios
 } from '@/lib/queries';
 import AdminTabsClient from '@/components/AdminTabsClient';
+import AdminLoginForm from '@/components/AdminLoginForm';
+import { isAdminAuthenticated } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const isAuth = await isAdminAuthenticated();
+  if (!isAuth) {
+    return <AdminLoginForm />;
+  }
+
   const textos = getAllTextosSistema();
   const frentes = getAllFrentes();
   const personas = getAllPersonas();
