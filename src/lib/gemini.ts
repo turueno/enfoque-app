@@ -61,8 +61,27 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
     pregunta_original: obs.pregunta_sugerida
   }));
 
-  // Lista de modelos disponibles en Google GenAI SDK v2
-  const candidateModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+  // Descubrir modelo dinámicamente o usar los recomendados
+  let candidateModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.6-flash'];
+  try {
+    const listResult = await ai.models.list();
+    if (listResult) {
+      const activeGenModels: string[] = [];
+      for await (const m of listResult) {
+        if (m.name && (m.supportedActions?.includes('generateContent') || !m.supportedActions)) {
+          const cleanName = m.name.replace(/^models\//, '');
+          if (cleanName.includes('flash') || cleanName.includes('pro')) {
+            activeGenModels.push(cleanName);
+          }
+        }
+      }
+      if (activeGenModels.length > 0) {
+        candidateModels = [...activeGenModels, ...candidateModels];
+      }
+    }
+  } catch (e) {
+    console.warn('No se pudo listar modelos dinámicamente, usando lista estática:', e);
+  }
 
   let response: any = null;
   let lastApiError: unknown = null;
