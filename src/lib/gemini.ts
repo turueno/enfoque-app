@@ -61,8 +61,8 @@ REGLAS ESTRICTAS DE GROUNDING (CERO ALUCINACIÓN):
     pregunta_original: obs.pregunta_sugerida
   }));
 
-  // Lista de modelos en orden de prioridad para tolerar saturación temporal (código 503)
-  const candidateModels = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
+  // Lista de modelos disponibles en Google GenAI SDK v2
+  const candidateModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
 
   let response: any = null;
   let lastApiError: unknown = null;
