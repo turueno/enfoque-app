@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "import-data": "node scripts/import_excel.js",
+    "sync-railway": "node scripts/sync_from_railway.mjs",
     "share": "node scripts/start_and_tunnel.mjs"
   },
   "dependencies": {
