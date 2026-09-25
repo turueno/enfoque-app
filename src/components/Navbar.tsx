@@ -88,8 +88,8 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
 
   const navItems = [
     { name: 'Inicio', href: '/', icon: Compass },
-    { name: textosMap['nav.item.enfoque'] || 'Enfoque', href: '/mi-enfoque', icon: User },
     { name: textosMap['nav.item.agenda'] || 'Agenda', href: '/agenda', icon: Calendar },
+    { name: textosMap['nav.item.enfoque'] || 'Enfoque', href: '/mi-enfoque', icon: User },
     { name: 'Mapa', href: '/mapa', icon: Grid },
     { name: textosMap['admin.entidades.subtab.procesos'] || 'Procesos', href: '/procesos', icon: Layers },
     { name: textosMap['admin.entidades.subtab.personas'] || 'Personas', href: '/personas', icon: Users },
