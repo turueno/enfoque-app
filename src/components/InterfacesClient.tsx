@@ -35,6 +35,7 @@ export default function InterfacesClient({
   const [frenteFilter, setFrenteFilter] = useState('ALL');
   const [personaFilter, setPersonaFilter] = useState('ALL');
   const [selectedInterface, setSelectedInterface] = useState<Interfaz | null>(null);
+  const [editingInterface, setEditingInterface] = useState<Interfaz | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
@@ -64,16 +65,21 @@ export default function InterfacesClient({
     });
   }, [interfaces, frenteFilter, personaFilter, personas]);
 
-  // Open modal for interface details & editing
-  const openDetail = (item: Interfaz) => {
+  // Select interface for sidebar inspection
+  const handleSelectInterface = (item: Interfaz) => {
     setSelectedInterface(item);
+  };
+
+  // Open modal for interface details & editing
+  const handleEditInterface = (item: Interfaz) => {
+    setEditingInterface(item);
     setDevuelveOutput(item.devuelve_output || '');
     setEstadoValidado(item.estado);
     setComentario(item.comentario_validacion || '');
   };
 
   const handleSaveInterface = async () => {
-    if (!selectedInterface) return;
+    if (!editingInterface) return;
     setSaving(true);
     try {
       const res = await fetch('/api/validate', {
@@ -81,7 +87,7 @@ export default function InterfacesClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           entidadTipo: 'interfaz',
-          id: selectedInterface.id,
+          id: editingInterface.id,
           accion: 'APROBADO',
           usuario: currentUser.nombre,
           comentario,
@@ -94,18 +100,22 @@ export default function InterfacesClient({
       const data = await res.json();
       if (data.success) {
         setInterfaces(prev => prev.map(item => {
-          if (item.id === selectedInterface.id) {
-            return {
+          if (item.id === editingInterface.id) {
+            const updated: Interfaz = {
               ...item,
               devuelve_output: devuelveOutput,
               estado: estadoValidado,
               estado_validacion: 'APROBADO',
               comentario_validacion: comentario
             };
+            if (selectedInterface?.id === item.id) {
+              setSelectedInterface(updated);
+            }
+            return updated;
           }
           return item;
         }));
-        setSelectedInterface(null);
+        setEditingInterface(null);
       }
     } catch (e) {
       console.error(e);
@@ -247,7 +257,7 @@ export default function InterfacesClient({
                 const dr = Math.sqrt(dx * dx + dy * dy) * 1.25;
 
                 return (
-                  <g key={inter.id} className="cursor-pointer" onClick={() => openDetail(inter)}>
+                  <g key={inter.id} className="cursor-pointer" onClick={() => handleSelectInterface(inter)}>
                     <path
                       d={`M ${source.x} ${source.y} A ${dr} ${dr} 0 0,1 ${target.x} ${target.y}`}
                       fill="none"
@@ -386,7 +396,7 @@ export default function InterfacesClient({
             {selectedInterface && (
               <div className="pt-4 border-t border-slate-100 flex justify-end">
                 <button
-                  onClick={() => openDetail(selectedInterface)}
+                  onClick={() => handleEditInterface(selectedInterface)}
                   className="w-full px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 text-center"
                 >
                   Validar / Editar Contrato
@@ -441,7 +451,7 @@ export default function InterfacesClient({
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-[11px] text-slate-400 font-mono">Procesos: {i.frentes_relacionados}</span>
                   <button
-                    onClick={() => openDetail(i)}
+                    onClick={() => handleEditInterface(i)}
                     className="text-blue-600 font-semibold hover:underline"
                   >
                     Validar / Editar
@@ -454,28 +464,28 @@ export default function InterfacesClient({
       )}
 
       {/* Detail / Validation Modal */}
-      {selectedInterface && (
+      {editingInterface && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <span className="font-mono text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                  {selectedInterface.id}
+                  {editingInterface.id}
                 </span>
                 <h2 className="text-base font-bold text-slate-900 mt-1">
                   Validar Interfaz de Trabajo
                 </h2>
               </div>
-              <button onClick={() => setSelectedInterface(null)} className="text-slate-400 hover:text-slate-700">
+              <button onClick={() => setEditingInterface(null)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-3 bg-slate-50 rounded-lg text-xs space-y-1">
               <div className="font-bold text-slate-900">
-                {selectedInterface.de_persona_nombre} ➔ {selectedInterface.hacia_persona_nombre}
+                {editingInterface.de_persona_nombre} ➔ {editingInterface.hacia_persona_nombre}
               </div>
-              <p className="text-slate-600"><strong className="text-slate-700">Input entregado:</strong> {selectedInterface.entrega_input}</p>
+              <p className="text-slate-600"><strong className="text-slate-700">Input entregado:</strong> {editingInterface.entrega_input}</p>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -525,7 +535,7 @@ export default function InterfacesClient({
             <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => setSelectedInterface(null)}
+                onClick={() => setEditingInterface(null)}
                 className="px-3 py-2 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100"
               >
                 Cancelar
