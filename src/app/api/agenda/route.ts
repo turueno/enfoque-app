@@ -6,7 +6,8 @@ import {
   toggleDestacadoSemana,
   setPrioridadManual,
   guardarMinutaReunion,
-  getMinutasReuniones
+  getMinutasReuniones,
+  quickSetInterfazStatus
 } from '@/lib/agenda';
 
 export const dynamic = 'force-dynamic';
@@ -55,6 +56,17 @@ export async function POST(req: Request) {
       }
       const nuevoEstado = toggleDestacadoSemana(entidadTipo, entidadId, usuario, semana);
       return NextResponse.json({ success: true, destacado: nuevoEstado });
+    }
+
+    if (action === 'quick_status') {
+      if (!entidadTipo || !entidadId || !body.estado) {
+        return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 });
+      }
+      if (entidadTipo === 'interfaz') {
+        quickSetInterfazStatus(entidadId, body.estado);
+        return NextResponse.json({ success: true });
+      }
+      return NextResponse.json({ error: 'Operación no soportada para este tipo' }, { status: 400 });
     }
 
     if (action === 'set_priority') {

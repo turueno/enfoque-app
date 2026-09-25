@@ -116,6 +116,15 @@ export function setPrioridadManual(
 }
 
 /**
+ * Quickly updates just the operational status of an interface.
+ */
+export function quickSetInterfazStatus(id: string, estado: string): boolean {
+  const db = getDb();
+  const result = db.prepare('UPDATE interfaces SET estado = ? WHERE id = ?').run(estado, id);
+  return result.changes > 0;
+}
+
+/**
  * Persists meeting minutes and agreements.
  */
 export function guardarMinutaReunion(data: {

@@ -336,16 +336,15 @@ export default function AgendaClient({
   // Quick Inline Resolution: change interface status
   const handleQuickStatusChange = async (item: AgendaItem, newStatus: string) => {
     try {
-      const res = await fetch('/api/entities', {
-        method: 'PUT',
+      const res = await fetch('/api/agenda', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tipo: 'interfaz',
-          id: item.entidad_id,
+          action: 'quick_status',
+          entidadTipo: 'interfaz',
+          entidadId: item.entidad_id,
           estado: newStatus,
-          usuario: currentUser.nombre,
-          userId: currentUser.id,
-          userEmail: currentUser.email
+          usuario: currentUser.nombre
         })
       });
       if (res.ok) {
