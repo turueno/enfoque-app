@@ -7,7 +7,8 @@ import { TextoSistema } from '@/lib/db';
 import { Frente, Persona, Decision, Interfaz, Responsabilidad, Principio } from '@/lib/types';
 import AdminTextosClient from './AdminTextosClient';
 import AdminEntitiesClient from './AdminEntitiesClient';
-import { FileText, Database, ShieldCheck, Settings, LogOut } from 'lucide-react';
+import AdminTelemetryView from './AdminTelemetryView';
+import { FileText, Database, ShieldCheck, Settings, LogOut, Activity } from 'lucide-react';
 import { logoutAdminAction } from '@/app/admin/actions';
 import { useRouter } from 'next/navigation';
 
@@ -23,7 +24,7 @@ interface AdminTabsClientProps {
 
 export default function AdminTabsClient(props: AdminTabsClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'textos' | 'entidades'>('textos');
+  const [activeTab, setActiveTab] = useState<'textos' | 'entidades' | 'telemetria'>('textos');
   const [textos, setTextos] = useState<TextoSistema[]>(props.initialTextos);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -109,13 +110,26 @@ export default function AdminTabsClient(props: AdminTabsClientProps) {
           <Database className="w-4 h-4 text-[#F6911E]" />
           <span>{tab2Name}</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('telemetria')}
+          className={`flex items-center space-x-2 px-5 py-3 border-b-2 font-semibold text-sm transition-colors ${
+            activeTab === 'telemetria'
+              ? 'border-[#F6911E] text-[#191919] bg-orange-50/30'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          }`}
+        >
+          <Activity className="w-4 h-4 text-[#F6911E]" />
+          <span>3. Monitoreo de Usuarios</span>
+        </button>
       </div>
 
       {/* Tab Panels */}
       <div>
-        {activeTab === 'textos' ? (
+        {activeTab === 'textos' && (
           <AdminTextosClient initialTextos={textos} onUpdateTextos={setTextos} />
-        ) : (
+        )}
+        {activeTab === 'entidades' && (
           <AdminEntitiesClient
             initialFrentes={props.initialFrentes}
             initialPersonas={props.initialPersonas}
@@ -125,6 +139,9 @@ export default function AdminTabsClient(props: AdminTabsClientProps) {
             initialPrincipios={props.initialPrincipios}
             textos={textos}
           />
+        )}
+        {activeTab === 'telemetria' && (
+          <AdminTelemetryView />
         )}
       </div>
     </div>

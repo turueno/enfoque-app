@@ -398,6 +398,26 @@ function initReunionesTable(db: DatabaseSync) {
   `);
 }
 
+function initTelemetriaTable(db: DatabaseSync) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS usuario_telemetria_log (
+      id TEXT PRIMARY KEY,
+      session_id TEXT,
+      persona_id TEXT,
+      persona_nombre TEXT,
+      persona_rol TEXT,
+      tipo_evento TEXT NOT NULL,
+      modulo_ruta TEXT,
+      detalles TEXT,
+      duracion_segundos INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_telemetria_created_at ON usuario_telemetria_log(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_telemetria_persona ON usuario_telemetria_log(persona_id);
+    CREATE INDEX IF NOT EXISTS idx_telemetria_session ON usuario_telemetria_log(session_id);
+  `);
+}
+
 export function getDb(): DatabaseSync {
   if (!dbInstance) {
     if (!fs.existsSync(DATA_DIR)) {
@@ -460,6 +480,7 @@ export function getDb(): DatabaseSync {
     initSnapshotsTable(dbInstance);
     initPrioridadesTable(dbInstance);
     initReunionesTable(dbInstance);
+    initTelemetriaTable(dbInstance);
   }
   return dbInstance;
 }
@@ -563,3 +584,136 @@ export function resetTextoSistema(clave: string, usuario: string): boolean {
   logAudit(usuario, 'texto_sistema', clave, 'valor', current.valor, current.valor_por_defecto, 'Restablecimiento a valor original');
   return true;
 }
+
+export interface UsuarioTelemetria {
+  id: string;
+  session_id: string | null;
+  persona_id: string | null;
+  persona_nombre: string | null;
+  persona_rol: string | null;
+  tipo_evento: string;
+  modulo_ruta: string | null;
+  detalles: string | null;
+  duracion_segundos: number;
+  created_at: string;
+}
+
+export function recordTelemetria(data: {
+  session_id?: string | null;
+  persona_id?: string | null;
+  persona_nombre?: string | null;
+  persona_rol?: string | null;
+  tipo_evento: string;
+  modulo_ruta?: string | null;
+  detalles?: string | null;
+  duracion_segundos?: number;
+}): UsuarioTelemetria {
+  const db = getDb();
+  const id = `tel_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const now = new Date().toISOString();
+  const duracion = data.duracion_segundos ?? 0;
+
+  const stmt = db.prepare(`
+    INSERT INTO usuario_telemetria_log (
+      id, session_id, persona_id, persona_nombre, persona_rol,
+      tipo_evento, modulo_ruta, detalles, duracion_segundos, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  stmt.run(
+    id,
+    data.session_id || null,
+    data.persona_id || null,
+    data.persona_nombre || null,
+    data.persona_rol || null,
+    data.tipo_evento,
+    data.modulo_ruta || null,
+    data.detalles || null,
+    duracion,
+    now
+  );
+
+  return {
+    id,
+    session_id: data.session_id || null,
+    persona_id: data.persona_id || null,
+    persona_nombre: data.persona_nombre || null,
+    persona_rol: data.persona_rol || null,
+    tipo_evento: data.tipo_evento,
+    modulo_ruta: data.modulo_ruta || null,
+    detalles: data.detalles || null,
+    duracion_segundos: duracion,
+    created_at: now
+  };
+}
+
+export function getTelemetriaLog(options?: {
+  limit?: number;
+  persona_id?: string;
+  tipo_evento?: string;
+}): UsuarioTelemetria[] {
+  const limit = options?.limit || 200;
+  const conditions: string[] = [];
+  const params: any[] = [];
+
+  if (options?.persona_id) {
+    conditions.push('persona_id = ?');
+    params.push(options.persona_id);
+  }
+  if (options?.tipo_evento) {
+    conditions.push('tipo_evento = ?');
+    params.push(options.tipo_evento);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const sql = `
+    SELECT * FROM usuario_telemetria_log
+    ${whereClause}
+    ORDER BY created_at DESC
+    LIMIT ?
+  `;
+  params.push(limit);
+
+  return queryAll<UsuarioTelemetria>(sql, ...params);
+}
+
+export function getTelemetriaStats(): {
+  totalSesionesHoy: number;
+  usuariosDistintosHoy: number;
+  moduloMasVisitado: string;
+  tiempoTotalMinutosHoy: number;
+} {
+  const today = new Date().toISOString().slice(0, 10);
+  const db = getDb();
+
+  const sesionesHoyRow = queryOne<{ count: number }>(`
+    SELECT COUNT(*) as count FROM usuario_telemetria_log 
+    WHERE tipo_evento = 'SESION_INICIADA' AND created_at >= ?
+  `, `${today}T00:00:00.000Z`);
+
+  const usuariosHoyRow = queryOne<{ count: number }>(`
+    SELECT COUNT(DISTINCT persona_id) as count FROM usuario_telemetria_log 
+    WHERE created_at >= ? AND persona_id IS NOT NULL
+  `, `${today}T00:00:00.000Z`);
+
+  const topModuloRow = queryOne<{ modulo_ruta: string; count: number }>(`
+    SELECT modulo_ruta, COUNT(*) as count FROM usuario_telemetria_log 
+    WHERE modulo_ruta IS NOT NULL AND tipo_evento = 'NAVEGACION'
+    GROUP BY modulo_ruta 
+    ORDER BY count DESC 
+    LIMIT 1
+  `);
+
+  const duracionRow = queryOne<{ total_segundos: number }>(`
+    SELECT SUM(duracion_segundos) as total_segundos FROM usuario_telemetria_log 
+    WHERE created_at >= ? AND duracion_segundos > 0
+  `, `${today}T00:00:00.000Z`);
+
+  return {
+    totalSesionesHoy: sesionesHoyRow?.count || 0,
+    usuariosDistintosHoy: usuariosHoyRow?.count || 0,
+    moduloMasVisitado: topModuloRow?.modulo_ruta || 'Inicio',
+    tiempoTotalMinutosHoy: Math.round((duracionRow?.total_segundos || 0) / 60)
+  };
+}
+

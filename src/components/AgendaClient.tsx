@@ -660,6 +660,15 @@ export default function AgendaClient({
         {/* Global Meeting Actions */}
         {meetingMode !== 'minutas' && (
           <div className="flex items-center space-x-2">
+            <Link
+              href="/principios"
+              className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-orange-50 border border-orange-200 text-[#F6911E] text-xs font-bold hover:bg-orange-100 transition-colors shadow-2xs"
+              title="Auditar si esta agenda cumple con la estrategia y principios transversales"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Auditor Estratégico</span>
+            </Link>
+
             <button
               onClick={handleCopyAgenda}
               className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-2xs"

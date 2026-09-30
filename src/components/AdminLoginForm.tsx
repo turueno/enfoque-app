@@ -22,7 +22,7 @@ export default function AdminLoginForm() {
     try {
       const res = await loginAdminAction(password);
       if (res.success) {
-        router.refresh();
+        window.location.href = '/admin';
       } else {
         setError(res.error || 'Contraseña incorrecta');
       }

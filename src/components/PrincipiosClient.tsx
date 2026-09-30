@@ -2,22 +2,26 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Principio, Frente } from '@/lib/types';
+import { Principio, Frente, AuditoriaEstrategicaReport } from '@/lib/types';
 import { useUser } from './UserContext';
-import { BookOpen, CheckCircle2, Sparkles, Layers } from 'lucide-react';
+import { BookOpen, CheckCircle2, Sparkles, Layers, ShieldCheck, ListChecks } from 'lucide-react';
+import AuditorEstrategicoClient from '@/components/AuditorEstrategicoClient';
 
 interface PrincipiosClientProps {
   principios: Principio[];
   frentes: (Frente & { owner_nombre: string | null })[];
   frentePrincipios: { frente_id: string; principio_id: string; aplicacion: string }[];
+  initialReport: AuditoriaEstrategicaReport;
 }
 
 export default function PrincipiosClient({
   principios,
   frentes,
   frentePrincipios: initialFP,
+  initialReport,
 }: PrincipiosClientProps) {
   const { currentUser } = useUser();
+  const [activeTab, setActiveTab] = useState<'principios' | 'auditor'>('principios');
   const [fpState, setFpState] = useState(initialFP);
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
@@ -56,8 +60,36 @@ export default function PrincipiosClient({
 
   return (
     <div className="space-y-8">
-      {/* MANIFIESTO ESTRATÉGICO PROVOKERS 3.0 */}
-      <div className="bg-gradient-to-br from-[#191919] via-slate-900 to-[#2A2A2A] rounded-2xl p-6 sm:p-8 text-white shadow-lg border border-slate-800 space-y-6">
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('principios')}
+          className={`flex-1 py-3 px-4 text-center border-b-2 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+            activeTab === 'principios'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          }`}
+        >
+          <ListChecks className="w-4 h-4" />
+          Principios y Matriz
+        </button>
+        <button
+          onClick={() => setActiveTab('auditor')}
+          className={`flex-1 py-3 px-4 text-center border-b-2 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+            activeTab === 'auditor'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          Auditor Estratégico AI
+        </button>
+      </div>
+
+      {activeTab === 'principios' && (
+        <div className="space-y-8">
+          {/* MANIFIESTO ESTRATÉGICO PROVOKERS 3.0 */}
+          <div className="bg-gradient-to-br from-[#191919] via-slate-900 to-[#2A2A2A] rounded-2xl p-6 sm:p-8 text-white shadow-lg border border-slate-800 space-y-6">
         <div className="space-y-2 border-b border-white/10 pb-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFAA34]/20 border border-[#FFAA34]/30 text-[#FFAA34] text-xs font-bold tracking-wide uppercase">
             <span>⚡ Estrategia PHPVKS 3.0</span>
@@ -223,6 +255,12 @@ export default function PrincipiosClient({
           </table>
         </div>
       </div>
+        </div>
+      )}
+
+      {activeTab === 'auditor' && (
+        <AuditorEstrategicoClient initialReport={initialReport} />
+      )}
     </div>
   );
 }

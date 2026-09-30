@@ -139,6 +139,49 @@ export interface StructuralAlert {
   entidad_id: string;
 }
 
+export interface HipotesisSolucion {
+  id: string;
+  titulo: string;
+  explicacion: string;
+  accion_sugerida: string;
+  tipo_accion?: 'acuerdo_minuta' | 'ajuste_prioridad' | 'aclarar_interfaz' | 'validar_owner';
+  acuerdo_propuesto?: string;
+}
+
+export interface AuditoriaEstrategicaItem {
+  id: string;
+  origen_tipo: 'agenda' | 'frente' | 'interfaz' | 'decision' | 'responsabilidad';
+  origen_id: string;
+  titulo: string;
+  principio_transversal: string; // ej: "A quién entendemos", "Cómo lo entendemos", "Desde dónde entendemos", o Proceso
+  proceso_afectado?: string;
+  severidad: 'alta' | 'media' | 'baja';
+  diagnostico_alineacion: string;
+  implicaciones_operativas: string;
+  hipotesis_soluciones: HipotesisSolucion[];
+  pregunta_directiva: string;
+  involucrados: string[];
+}
+
+export interface AuditoriaEstrategicaReport {
+  timestamp: string;
+  items: AuditoriaEstrategicaItem[];
+  modelUsed?: string;
+  resumen_ejecutivo: {
+    nivel_salud_estrategica: 'Óptima' | 'Requiere Atención' | 'Riesgo de Desalineación';
+    total_observaciones: number;
+    principales_fricciones: string[];
+    recomendacion_inmediata: string;
+  };
+  error?: string;
+}
+
+export interface AssistantChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: string;
+}
+
 export interface AIReviewObservation {
   id: string;
   titulo: string;

@@ -57,13 +57,23 @@ export function verifyAdminPassword(password: string): boolean {
   const secret = getAdminSecret();
   if (!password || password.trim() === '') return false;
   
+  const trimmedPass = password.trim();
+  const trimmedSecret = secret.trim();
+
   try {
-    const passBuffer = Buffer.from(password.trim());
-    const secretBuffer = Buffer.from(secret.trim());
-    if (passBuffer.length !== secretBuffer.length) return false;
-    return crypto.timingSafeEqual(passBuffer, secretBuffer);
+    const passBuffer = Buffer.from(trimmedPass);
+    const secretBuffer = Buffer.from(trimmedSecret);
+    if (passBuffer.length !== secretBuffer.length) {
+      console.log(`[AdminAuth] Intento fallido: longitud ingresada ${passBuffer.length} vs esperada ${secretBuffer.length}. (ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? 'DEFINIDA' : 'DEFAULT_PROVOKERS2026'})`);
+      return false;
+    }
+    const match = crypto.timingSafeEqual(passBuffer, secretBuffer);
+    if (!match) {
+      console.log(`[AdminAuth] Intento fallido: coincidencia incorrecta. (ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? 'DEFINIDA' : 'DEFAULT_PROVOKERS2026'})`);
+    }
+    return match;
   } catch {
-    return password.trim() === secret.trim();
+    return trimmedPass === trimmedSecret;
   }
 }
 

@@ -113,6 +113,7 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
               <img
                 src="/logo.png"
                 alt="Provokers"
+                style={{ height: '28px', width: 'auto', maxHeight: '28px', objectFit: 'contain' }}
                 className="h-7 w-auto object-contain transition-transform group-hover:scale-105"
               />
               <div className="border-l border-slate-300 pl-3">
