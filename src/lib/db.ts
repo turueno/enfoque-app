@@ -651,6 +651,7 @@ export function getTelemetriaLog(options?: {
   limit?: number;
   persona_id?: string;
   tipo_evento?: string;
+  periodo?: 'hoy' | '7d' | '30d' | 'todo';
 }): UsuarioTelemetria[] {
   const limit = options?.limit || 200;
   const conditions: string[] = [];
@@ -665,6 +666,23 @@ export function getTelemetriaLog(options?: {
     params.push(options.tipo_evento);
   }
 
+  const periodo = options?.periodo || 'todo';
+  if (periodo !== 'todo') {
+    const now = new Date();
+    let startDate: string;
+    if (periodo === 'hoy') {
+      startDate = `${now.toISOString().slice(0, 10)}T00:00:00.000Z`;
+    } else if (periodo === '7d') {
+      const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      startDate = d7.toISOString();
+    } else {
+      const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      startDate = d30.toISOString();
+    }
+    conditions.push('created_at >= ?');
+    params.push(startDate);
+  }
+
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const sql = `
     SELECT * FROM usuario_telemetria_log
@@ -677,43 +695,71 @@ export function getTelemetriaLog(options?: {
   return queryAll<UsuarioTelemetria>(sql, ...params);
 }
 
-export function getTelemetriaStats(): {
-  totalSesionesHoy: number;
-  usuariosDistintosHoy: number;
+export function getTelemetriaStats(periodo: 'hoy' | '7d' | '30d' | 'todo' = 'hoy'): {
+  totalSesiones: number;
+  usuariosDistintos: number;
   moduloMasVisitado: string;
-  tiempoTotalMinutosHoy: number;
+  tiempoTotalMinutos: number;
+  periodoLabel: string;
 } {
-  const today = new Date().toISOString().slice(0, 10);
-  const db = getDb();
+  const conditions: string[] = [];
+  const params: any[] = [];
+  let periodoLabel = 'Hoy';
 
-  const sesionesHoyRow = queryOne<{ count: number }>(`
+  if (periodo !== 'todo') {
+    const now = new Date();
+    let startDate: string;
+    if (periodo === 'hoy') {
+      startDate = `${now.toISOString().slice(0, 10)}T00:00:00.000Z`;
+      periodoLabel = 'Hoy';
+    } else if (periodo === '7d') {
+      const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      startDate = d7.toISOString();
+      periodoLabel = 'Últimos 7 días';
+    } else {
+      const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      startDate = d30.toISOString();
+      periodoLabel = 'Últimos 30 días';
+    }
+    conditions.push('created_at >= ?');
+    params.push(startDate);
+  } else {
+    periodoLabel = 'Todo el histórico';
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const andClause = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
+
+  const sesionesRow = queryOne<{ count: number }>(`
     SELECT COUNT(*) as count FROM usuario_telemetria_log 
-    WHERE tipo_evento = 'SESION_INICIADA' AND created_at >= ?
-  `, `${today}T00:00:00.000Z`);
+    WHERE tipo_evento = 'SESION_INICIADA' ${andClause}
+  `, ...params);
 
-  const usuariosHoyRow = queryOne<{ count: number }>(`
+  const usuariosRow = queryOne<{ count: number }>(`
     SELECT COUNT(DISTINCT persona_id) as count FROM usuario_telemetria_log 
-    WHERE created_at >= ? AND persona_id IS NOT NULL
-  `, `${today}T00:00:00.000Z`);
+    ${whereClause} ${conditions.length > 0 ? 'AND' : 'WHERE'} persona_id IS NOT NULL
+  `, ...params);
 
   const topModuloRow = queryOne<{ modulo_ruta: string; count: number }>(`
     SELECT modulo_ruta, COUNT(*) as count FROM usuario_telemetria_log 
-    WHERE modulo_ruta IS NOT NULL AND tipo_evento = 'NAVEGACION'
+    WHERE modulo_ruta IS NOT NULL AND tipo_evento = 'NAVEGACION' ${andClause}
     GROUP BY modulo_ruta 
     ORDER BY count DESC 
     LIMIT 1
-  `);
+  `, ...params);
 
   const duracionRow = queryOne<{ total_segundos: number }>(`
     SELECT SUM(duracion_segundos) as total_segundos FROM usuario_telemetria_log 
-    WHERE created_at >= ? AND duracion_segundos > 0
-  `, `${today}T00:00:00.000Z`);
+    ${whereClause} ${conditions.length > 0 ? 'AND' : 'WHERE'} duracion_segundos > 0
+  `, ...params);
 
   return {
-    totalSesionesHoy: sesionesHoyRow?.count || 0,
-    usuariosDistintosHoy: usuariosHoyRow?.count || 0,
-    moduloMasVisitado: topModuloRow?.modulo_ruta || 'Inicio',
-    tiempoTotalMinutosHoy: Math.round((duracionRow?.total_segundos || 0) / 60)
+    totalSesiones: sesionesRow?.count || 0,
+    usuariosDistintos: usuariosRow?.count || 0,
+    moduloMasVisitado: topModuloRow?.modulo_ruta || '—',
+    tiempoTotalMinutos: Math.round((duracionRow?.total_segundos || 0) / 60),
+    periodoLabel
   };
 }
+
 

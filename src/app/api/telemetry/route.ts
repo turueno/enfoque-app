@@ -53,13 +53,14 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 200;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 300;
     const persona_id = searchParams.get('persona_id') || undefined;
     const tipo_evento = searchParams.get('tipo_evento') || undefined;
+    const periodo = (searchParams.get('periodo') as 'hoy' | '7d' | '30d' | 'todo') || 'todo';
     const withStats = searchParams.get('stats') === 'true';
 
-    const logs = getTelemetriaLog({ limit, persona_id, tipo_evento });
-    const stats = withStats ? getTelemetriaStats() : undefined;
+    const logs = getTelemetriaLog({ limit, persona_id, tipo_evento, periodo });
+    const stats = withStats ? getTelemetriaStats(periodo) : undefined;
 
     return NextResponse.json({ logs, stats });
   } catch (error: any) {

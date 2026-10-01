@@ -13,17 +13,20 @@ import {
   LogIn,
   Eye,
   LogOut,
-  Sparkles,
-  Layers,
+  Calendar,
+  Download,
   ChevronDown
 } from 'lucide-react';
 
 interface TelemetryStats {
-  totalSesionesHoy: number;
-  usuariosDistintosHoy: number;
+  totalSesiones: number;
+  usuariosDistintos: number;
   moduloMasVisitado: string;
-  tiempoTotalMinutosHoy: number;
+  tiempoTotalMinutos: number;
+  periodoLabel: string;
 }
+
+type PeriodoFilter = 'hoy' | '7d' | '30d' | 'todo';
 
 export default function AdminTelemetryView() {
   const [logs, setLogs] = useState<UsuarioTelemetria[]>([]);
@@ -33,11 +36,13 @@ export default function AdminTelemetryView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPersona, setSelectedPersona] = useState('ALL');
   const [selectedEvento, setSelectedEvento] = useState('ALL');
+  const [selectedPeriodo, setSelectedPeriodo] = useState<PeriodoFilter>('hoy');
+  const [selectedLimit, setSelectedLimit] = useState<number>(300);
 
   const fetchTelemetry = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
-      const res = await fetch('/api/telemetry?limit=300&stats=true');
+      const res = await fetch(`/api/telemetry?limit=${selectedLimit}&periodo=${selectedPeriodo}&stats=true`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || []);
@@ -53,12 +58,12 @@ export default function AdminTelemetryView() {
 
   useEffect(() => {
     fetchTelemetry();
-    // Auto-refresh cada 30 segundos si la pestaña está activa
+    // Auto-refresh cada 30 segundos
     const interval = setInterval(() => {
       fetchTelemetry();
     }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedPeriodo, selectedLimit]);
 
   // Lista única de personas registradas para el filtro
   const personasOptions = useMemo(() => {
@@ -74,15 +79,12 @@ export default function AdminTelemetryView() {
   // Filtrado reactivo de logs
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
-      // Filtro por persona
       if (selectedPersona !== 'ALL' && log.persona_id !== selectedPersona) {
         return false;
       }
-      // Filtro por tipo de evento
       if (selectedEvento !== 'ALL' && log.tipo_evento !== selectedEvento) {
         return false;
       }
-      // Filtro de texto libre
       if (searchTerm.trim() !== '') {
         const query = searchTerm.toLowerCase();
         const inNombre = (log.persona_nombre || '').toLowerCase().includes(query);
@@ -94,6 +96,32 @@ export default function AdminTelemetryView() {
       return true;
     });
   }, [logs, selectedPersona, selectedEvento, searchTerm]);
+
+  // Exportar histórico a CSV descargable
+  const exportToCSV = () => {
+    if (!filteredLogs.length) return;
+
+    const headers = ['Fecha y Hora', 'Colaborador', 'Rol', 'Tipo de Evento', 'Modulo', 'Detalle', 'Duracion (segundos)', 'Sesion ID'];
+    const rows = filteredLogs.map(l => [
+      `"${new Date(l.created_at).toLocaleString('es-MX')}"`,
+      `"${(l.persona_nombre || '').replace(/"/g, '""')}"`,
+      `"${(l.persona_rol || '').replace(/"/g, '""')}"`,
+      `"${l.tipo_evento}"`,
+      `"${(l.modulo_ruta || '').replace(/"/g, '""')}"`,
+      `"${(l.detalles || '').replace(/"/g, '""')}"`,
+      l.duracion_segundos || 0,
+      `"${l.session_id || ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `trazabilidad_enfoque_${selectedPeriodo}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Formateadores visuales
   const getEventBadge = (tipo: string) => {
@@ -137,15 +165,58 @@ export default function AdminTelemetryView() {
     return `${m}m ${s}s`;
   };
 
-  const formatDate = (isoString: string) => {
+  // Formato inteligente de Fecha + Hora
+  const formatDateTime = (isoString: string) => {
     try {
       const d = new Date(isoString);
-      return d.toLocaleTimeString('es-MX', {
+      const now = new Date();
+      
+      const isToday = d.toDateString() === now.toDateString();
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      const isYesterday = d.toDateString() === yesterday.toDateString();
+
+      const timeStr = d.toLocaleTimeString('es-MX', {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
         hour12: true
       });
+
+      if (isToday) {
+        return (
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100/70 text-emerald-800">Hoy</span>
+              <span className="font-semibold text-slate-800">{timeStr}</span>
+            </div>
+          </div>
+        );
+      }
+
+      if (isYesterday) {
+        return (
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-700">Ayer</span>
+              <span className="text-slate-600">{timeStr}</span>
+            </div>
+          </div>
+        );
+      }
+
+      const dateStr = d.toLocaleDateString('es-MX', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
+      return (
+        <div>
+          <div className="text-[11px] font-medium text-slate-700">{dateStr}</div>
+          <div className="text-[10px] text-slate-400 font-mono">{timeStr}</div>
+        </div>
+      );
     } catch {
       return isoString;
     }
@@ -153,37 +224,92 @@ export default function AdminTelemetryView() {
 
   return (
     <div className="space-y-6">
-      {/* Barra superior de métricas (KPIs estilo PVKS MetaSuite) */}
+      {/* Barra superior de métricas con selector de período */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-100/60 p-3 rounded-2xl border border-slate-200/60">
+        <div className="flex items-center space-x-2 text-xs font-semibold text-slate-700">
+          <Calendar className="w-4 h-4 text-[#F6911E]" />
+          <span>Rango de consulta:</span>
+          <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-900 font-bold">
+            {stats?.periodoLabel || 'Hoy'}
+          </span>
+        </div>
+
+        {/* Botones de selección rápida de período */}
+        <div className="flex items-center space-x-1 bg-white p-1 rounded-xl border border-slate-200 text-xs">
+          <button
+            onClick={() => setSelectedPeriodo('hoy')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              selectedPeriodo === 'hoy'
+                ? 'bg-[#191919] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            Hoy
+          </button>
+          <button
+            onClick={() => setSelectedPeriodo('7d')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              selectedPeriodo === '7d'
+                ? 'bg-[#191919] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            Últimos 7 días
+          </button>
+          <button
+            onClick={() => setSelectedPeriodo('30d')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              selectedPeriodo === '30d'
+                ? 'bg-[#191919] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            Últimos 30 días
+          </button>
+          <button
+            onClick={() => setSelectedPeriodo('todo')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              selectedPeriodo === 'todo'
+                ? 'bg-[#191919] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            Histórico completo
+          </button>
+        </div>
+      </div>
+
+      {/* Tarjetas KPI dinámicas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Sesiones Hoy */}
+        {/* Card 1: Sesiones */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Sesiones Hoy</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Sesiones</span>
             <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
               <LogIn className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900">
-            {stats ? stats.totalSesionesHoy : '—'}
+            {stats ? stats.totalSesiones : '—'}
           </div>
           <p className="text-xs text-slate-500 mt-1 font-editorial">
-            Accesos de colaboradores en la jornada
+            Accesos en el período ({stats?.periodoLabel || 'Hoy'})
           </p>
         </div>
 
-        {/* Card 2: Usuarios Activos */}
+        {/* Card 2: Usuarios Únicos */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Usuarios Únicos Hoy</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Colaboradores Únicos</span>
             <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900">
-            {stats ? stats.usuariosDistintosHoy : '—'}
+            {stats ? stats.usuariosDistintos : '—'}
           </div>
           <p className="text-xs text-slate-500 mt-1 font-editorial">
-            Personas del equipo conectadas
+            Personas del equipo con actividad
           </p>
         </div>
 
@@ -199,23 +325,23 @@ export default function AdminTelemetryView() {
             {stats ? stats.moduloMasVisitado : '—'}
           </div>
           <p className="text-xs text-slate-500 mt-1 font-editorial">
-            Zona de mayor atención y lectura
+            Zona de mayor interés organizacional
           </p>
         </div>
 
         {/* Card 4: Tiempo Total */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tiempo Total Hoy</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tiempo Acumulado</span>
             <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900">
-            {stats ? `${stats.tiempoTotalMinutosHoy} min` : '—'}
+            {stats ? `${stats.tiempoTotalMinutos} min` : '—'}
           </div>
           <p className="text-xs text-slate-500 mt-1 font-editorial">
-            Tiempo de permanencia acumulado
+            Permanencia en {stats?.periodoLabel || 'el período'}
           </p>
         </div>
       </div>
@@ -224,11 +350,11 @@ export default function AdminTelemetryView() {
       <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Buscador de texto */}
-          <div className="relative flex-1 md:w-72">
+          <div className="relative flex-1 md:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar por colaborador o módulo..."
+              placeholder="Buscar colaborador o módulo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#F6911E]/30 focus:border-[#F6911E]"
@@ -264,17 +390,39 @@ export default function AdminTelemetryView() {
             </select>
             <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
+
+          {/* Límite de filas */}
+          <div className="relative">
+            <select
+              value={selectedLimit}
+              onChange={(e) => setSelectedLimit(Number(e.target.value))}
+              className="appearance-none pl-3 pr-8 py-2 text-xs rounded-xl border border-slate-200 bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#F6911E]/30"
+            >
+              <option value={100}>Mostrar 100</option>
+              <option value={300}>Mostrar 300</option>
+              <option value={500}>Mostrar 500</option>
+              <option value={1000}>Mostrar 1,000</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
         </div>
 
-        {/* Botón Refrescar */}
+        {/* Botones de acción derecha (Exportar & Refrescar) */}
         <div className="flex items-center space-x-2 w-full md:w-auto justify-end">
-          <span className="text-xs text-slate-400 font-mono hidden sm:inline">
-            {filteredLogs.length} eventos
-          </span>
+          <button
+            onClick={exportToCSV}
+            disabled={filteredLogs.length === 0}
+            className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-40 shadow-xs"
+            title="Descargar eventos visibles en formato CSV para Excel"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </button>
+
           <button
             onClick={() => fetchTelemetry(true)}
             disabled={refreshing}
-            className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+            className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-xs"
             title="Actualizar bitácora ahora"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-[#F6911E]' : ''}`} />
@@ -289,11 +437,11 @@ export default function AdminTelemetryView() {
           <div className="flex items-center space-x-2">
             <Activity className="w-4 h-4 text-[#F6911E]" />
             <h2 className="text-sm font-bold text-slate-900">
-              Bitácora de Trazabilidad & Accesos de Usuarios
+              Bitácora de Trazabilidad Histórica de Usuarios
             </h2>
           </div>
           <span className="text-xs text-slate-400 font-editorial">
-            Monitoreo en segundo plano conectado a SQLite
+            {filteredLogs.length} eventos registrados sin límite de antigüedad
           </span>
         </div>
 
@@ -304,14 +452,14 @@ export default function AdminTelemetryView() {
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="py-16 text-center text-slate-400 text-xs font-editorial">
-            No se encontraron eventos registrados con los filtros seleccionados.
+            No se encontraron eventos registrados en este período ({stats?.periodoLabel || 'Hoy'}).
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/70 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
                 <tr>
-                  <th className="px-6 py-3">Hora</th>
+                  <th className="px-6 py-3">Fecha y Hora</th>
                   <th className="px-6 py-3">Colaborador / Perfil</th>
                   <th className="px-6 py-3">Tipo de Evento</th>
                   <th className="px-6 py-3">Módulo / Ruta</th>
@@ -322,9 +470,9 @@ export default function AdminTelemetryView() {
               <tbody className="divide-y divide-slate-100">
                 {filteredLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                    {/* Hora */}
-                    <td className="px-6 py-3.5 font-mono text-slate-500 whitespace-nowrap">
-                      {formatDate(log.created_at)}
+                    {/* Fecha y Hora completa */}
+                    <td className="px-6 py-3.5 whitespace-nowrap">
+                      {formatDateTime(log.created_at)}
                     </td>
 
                     {/* Colaborador */}
