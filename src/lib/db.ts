@@ -291,6 +291,13 @@ const DEFAULT_TEXTOS: Array<{
     tipo_campo: 'text'
   },
   {
+    clave: 'footer.version',
+    seccion: 'Pie de Página (Footer)',
+    etiqueta: 'Etiqueta de Versión del Sistema',
+    valor: 'v1.0',
+    tipo_campo: 'text'
+  },
+  {
     clave: 'footer.status',
     seccion: 'Pie de Página (Footer)',
     etiqueta: 'Leyenda de Estado / Conectividad',

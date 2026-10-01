@@ -39,7 +39,7 @@ export default function RootLayout({
                 />
                 <span className="font-bold text-[#191919] tracking-wider">{textos['nav.app_name'] || 'ENFOQUE'}</span>
                 <span>{textos['footer.tagline'] || '— Sistema Operativo de Gestión'}</span>
-                <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">v1.0</span>
+                <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">{textos['footer.version'] || 'v1.0'}</span>
               </div>
               <div className="flex items-center space-x-4">
                 <span>{textos['footer.status'] || 'Conectado a Google Workspace • 3 Capas: Original / Propuesto / Validado'}</span>
