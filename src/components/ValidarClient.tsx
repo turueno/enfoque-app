@@ -76,15 +76,15 @@ export default function ValidarClient({
       const data = await res.json();
       if (data.success) {
         if (entidadTipo === 'frente') {
-          setFrentes(prev => prev.map(f => f.id === id ? { ...f, estado_validacion: data.estado, ...cambios } : f));
+          setFrentes(prev => prev.map(f => f.id === id ? { ...f, estado_validacion: data.estado, comentario_validacion: comentario, ...cambios } : f));
         } else if (entidadTipo === 'responsabilidad') {
-          setResponsabilidades(prev => prev.map(r => r.id === id ? { ...r, estado_validacion: data.estado, ...cambios } : r));
+          setResponsabilidades(prev => prev.map(r => r.id === id ? { ...r, estado_validacion: data.estado, comentario_validacion: comentario, ...cambios } : r));
         } else if (entidadTipo === 'resultado') {
-          setResultados(prev => prev.map(r => r.id === id ? { ...r, estado_validacion: data.estado, ...cambios } : r));
+          setResultados(prev => prev.map(r => r.id === id ? { ...r, estado_validacion: data.estado, comentario_validacion: comentario, ...cambios } : r));
         } else if (entidadTipo === 'decision') {
-          setDecisiones(prev => prev.map(d => d.id === id ? { ...d, estado_validacion: data.estado, ...cambios } : d));
+          setDecisiones(prev => prev.map(d => d.id === id ? { ...d, estado_validacion: data.estado, comentario_validacion: comentario, ...cambios } : d));
         } else if (entidadTipo === 'interfaz') {
-          setInterfaces(prev => prev.map(i => i.id === id ? { ...i, estado_validacion: data.estado, ...cambios } : i));
+          setInterfaces(prev => prev.map(i => i.id === id ? { ...i, estado_validacion: data.estado, comentario_validacion: comentario, ...cambios } : i));
         }
       }
     } catch (e) {
@@ -201,12 +201,25 @@ export default function ValidarClient({
                   </div>
                 </div>
 
+                {/* Comentarios de Validación */}
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="text-slate-600 font-semibold block mb-1 text-[10px] uppercase">Comentarios / Justificación:</label>
+                  <input
+                    type="text"
+                    id={`frente-comentario-${f.id}`}
+                    defaultValue={f.comentario_validacion || ''}
+                    placeholder="Notas sobre esta validación..."
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs"
+                  />
+                </div>
+
                 {/* Actions */}
                 <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => {
                       const sel = (document.getElementById(`owner-select-${f.id}`) as HTMLSelectElement)?.value;
-                      executeValidation('frente', f.id, 'RECHAZADO', { owner_id: sel }, 'Requiere revisión de dirección');
+                      const com = (document.getElementById(`frente-comentario-${f.id}`) as HTMLInputElement)?.value;
+                      executeValidation('frente', f.id, 'RECHAZADO', { owner_id: sel }, com || 'Requiere revisión de dirección');
                     }}
                     disabled={savingId === f.id}
                     className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
@@ -217,7 +230,8 @@ export default function ValidarClient({
                   <button
                     onClick={() => {
                       const sel = (document.getElementById(`owner-select-${f.id}`) as HTMLSelectElement)?.value;
-                      executeValidation('frente', f.id, 'APROBADO', { owner_id: sel }, 'Owner ratificado');
+                      const com = (document.getElementById(`frente-comentario-${f.id}`) as HTMLInputElement)?.value;
+                      executeValidation('frente', f.id, 'APROBADO', { owner_id: sel }, com || 'Owner ratificado');
                     }}
                     disabled={savingId === f.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
@@ -296,12 +310,25 @@ export default function ValidarClient({
                   </div>
                 </div>
 
+                {/* Comentarios de Validación */}
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="text-slate-600 font-semibold block mb-1 text-[10px] uppercase">Comentarios / Justificación:</label>
+                  <input
+                    type="text"
+                    id={`resp-comentario-${r.id}`}
+                    defaultValue={r.comentario_validacion || ''}
+                    placeholder="Notas sobre esta validación..."
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs"
+                  />
+                </div>
+
                 {/* Action Buttons */}
                 <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => {
                       const sel = (document.getElementById(`resp-role-${r.id}`) as HTMLSelectElement)?.value;
-                      executeValidation('responsabilidad', r.id, 'RECHAZADO', { rol_validado: sel }, 'Requiere reformular');
+                      const com = (document.getElementById(`resp-comentario-${r.id}`) as HTMLInputElement)?.value;
+                      executeValidation('responsabilidad', r.id, 'RECHAZADO', { rol_validado: sel }, com || 'Requiere reformular');
                     }}
                     disabled={savingId === r.id}
                     className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
@@ -312,7 +339,8 @@ export default function ValidarClient({
                   <button
                     onClick={() => {
                       const sel = (document.getElementById(`resp-role-${r.id}`) as HTMLSelectElement)?.value;
-                      executeValidation('responsabilidad', r.id, 'APROBADO', { rol_validado: sel }, 'Validado');
+                      const com = (document.getElementById(`resp-comentario-${r.id}`) as HTMLInputElement)?.value;
+                      executeValidation('responsabilidad', r.id, 'APROBADO', { rol_validado: sel }, com || 'Validado');
                     }}
                     disabled={savingId === r.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
@@ -372,12 +400,37 @@ export default function ValidarClient({
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-2 border-t border-slate-100">
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="text-slate-600 font-semibold block mb-1 text-[10px] uppercase">Comentarios / Justificación:</label>
+                  <input
+                    type="text"
+                    id={`res-comentario-${res.id}`}
+                    defaultValue={res.comentario_validacion || ''}
+                    placeholder="Notas sobre esta validación..."
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => {
                       const ind = (document.getElementById(`res-ind-${res.id}`) as HTMLInputElement)?.value;
                       const est = (document.getElementById(`res-estado-${res.id}`) as HTMLSelectElement)?.value;
-                      executeValidation('resultado', res.id, 'APROBADO', { indicador_validado: ind, estado: est });
+                      const com = (document.getElementById(`res-comentario-${res.id}`) as HTMLInputElement)?.value;
+                      executeValidation('resultado', res.id, 'RECHAZADO', { indicador_validado: ind, estado: est }, com || 'Requiere revisión');
+                    }}
+                    disabled={savingId === res.id}
+                    className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
+                  >
+                    Marcar Revisión
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const ind = (document.getElementById(`res-ind-${res.id}`) as HTMLInputElement)?.value;
+                      const est = (document.getElementById(`res-estado-${res.id}`) as HTMLSelectElement)?.value;
+                      const com = (document.getElementById(`res-comentario-${res.id}`) as HTMLInputElement)?.value;
+                      executeValidation('resultado', res.id, 'APROBADO', { indicador_validado: ind, estado: est }, com || 'Validado');
                     }}
                     disabled={savingId === res.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
@@ -435,12 +488,37 @@ export default function ValidarClient({
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-2 border-t border-slate-100">
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="text-slate-600 font-semibold block mb-1 text-[10px] uppercase">Comentarios / Justificación:</label>
+                  <input
+                    type="text"
+                    id={`dec-comentario-${d.id}`}
+                    defaultValue={d.comentario_validacion || ''}
+                    placeholder="Notas sobre esta validación..."
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => {
                       const decId = (document.getElementById(`dec-select-${d.id}`) as HTMLSelectElement)?.value;
                       const con = (document.getElementById(`dec-consult-${d.id}`) as HTMLInputElement)?.value;
-                      executeValidation('decision', d.id, 'APROBADO', { decisor_validado_id: decId, consultar_a_validado: con });
+                      const com = (document.getElementById(`dec-comentario-${d.id}`) as HTMLInputElement)?.value;
+                      executeValidation('decision', d.id, 'RECHAZADO', { decisor_validado_id: decId, consultar_a_validado: con }, com || 'Requiere revisión');
+                    }}
+                    disabled={savingId === d.id}
+                    className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
+                  >
+                    Marcar Revisión
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const decId = (document.getElementById(`dec-select-${d.id}`) as HTMLSelectElement)?.value;
+                      const con = (document.getElementById(`dec-consult-${d.id}`) as HTMLInputElement)?.value;
+                      const com = (document.getElementById(`dec-comentario-${d.id}`) as HTMLInputElement)?.value;
+                      executeValidation('decision', d.id, 'APROBADO', { decisor_validado_id: decId, consultar_a_validado: con }, com || 'Validado');
                     }}
                     disabled={savingId === d.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
@@ -488,11 +566,35 @@ export default function ValidarClient({
                   />
                 </div>
 
-                <div className="flex justify-end pt-2 border-t border-slate-100">
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="text-slate-600 font-semibold block mb-1 text-[10px] uppercase">Comentarios / Justificación:</label>
+                  <input
+                    type="text"
+                    id={`int-comentario-${i.id}`}
+                    defaultValue={i.comentario_validacion || ''}
+                    placeholder="Notas sobre esta validación..."
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => {
                       const out = (document.getElementById(`int-output-${i.id}`) as HTMLTextAreaElement)?.value;
-                      executeValidation('interfaz', i.id, 'APROBADO', { devuelve_output: out });
+                      const com = (document.getElementById(`int-comentario-${i.id}`) as HTMLInputElement)?.value;
+                      executeValidation('interfaz', i.id, 'RECHAZADO', { devuelve_output: out }, com || 'Requiere revisión');
+                    }}
+                    disabled={savingId === i.id}
+                    className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
+                  >
+                    Marcar Revisión
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const out = (document.getElementById(`int-output-${i.id}`) as HTMLTextAreaElement)?.value;
+                      const com = (document.getElementById(`int-comentario-${i.id}`) as HTMLInputElement)?.value;
+                      executeValidation('interfaz', i.id, 'APROBADO', { devuelve_output: out }, com || 'Validado');
                     }}
                     disabled={savingId === i.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
