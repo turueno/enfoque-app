@@ -5,7 +5,8 @@ import {
   getAllDecisiones,
   getAllInterfaces,
   getAllResponsabilidades,
-  getAllPrincipios
+  getAllPrincipios,
+  getAllResultados
 } from '@/lib/queries';
 import AdminTabsClient from '@/components/AdminTabsClient';
 import AdminLoginForm from '@/components/AdminLoginForm';
@@ -26,6 +27,7 @@ export default async function AdminPage() {
   const interfaces = getAllInterfaces();
   const responsabilidades = getAllResponsabilidades() as any;
   const principios = getAllPrincipios();
+  const resultados = getAllResultados();
 
   return (
     <div className="py-2">
@@ -37,6 +39,7 @@ export default async function AdminPage() {
         initialInterfaces={interfaces}
         initialResponsabilidades={responsabilidades}
         initialPrincipios={principios}
+        initialResultados={resultados}
       />
     </div>
   );

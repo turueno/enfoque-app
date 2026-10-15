@@ -24,6 +24,7 @@ interface ValidarClientProps {
   decisiones: (Decision & { frente_nombre: string; decisor_nombre: string | null })[];
   interfaces: Interfaz[];
   personas: Persona[];
+  textosMap?: Record<string, string>;
 }
 
 export default function ValidarClient({
@@ -33,6 +34,7 @@ export default function ValidarClient({
   decisiones: initialDecisiones,
   interfaces: initialInterfaces,
   personas,
+  textosMap = {},
 }: ValidarClientProps) {
   const { currentUser } = useUser();
   const [activeTab, setActiveTab] = useState<'owners' | 'responsabilidades' | 'resultados' | 'decisiones' | 'interfaces'>('owners');
@@ -96,7 +98,7 @@ export default function ValidarClient({
 
   return (
     <div className="space-y-6">
-      {/* Category Tabs (Requirement 13: 1. Owners, 2. Responsabilidades, 3. Resultados, 4. Decisiones, 5. Interfaces) */}
+      {/* Category Tabs */}
       <div className="flex space-x-2 border-b border-slate-200 pb-2 overflow-x-auto text-xs font-semibold scrollbar-none">
         <button
           onClick={() => setActiveTab('owners')}
@@ -105,7 +107,7 @@ export default function ValidarClient({
           }`}
         >
           <Shield className="w-4 h-4" />
-          <span>1. Owners de Procesos ({pendingOwners.length})</span>
+          <span>{textosMap['validar.tab.owners'] || '1. Owners de Procesos'} ({pendingOwners.length})</span>
         </button>
 
         <button
@@ -115,7 +117,7 @@ export default function ValidarClient({
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>2. Responsabilidades ({pendingResps.length})</span>
+          <span>{textosMap['validar.tab.responsabilidades'] || '2. Responsabilidades'} ({pendingResps.length})</span>
         </button>
 
         <button
@@ -125,7 +127,7 @@ export default function ValidarClient({
           }`}
         >
           <Target className="w-4 h-4" />
-          <span>3. Resultados ({pendingResultados.length})</span>
+          <span>{textosMap['validar.tab.resultados'] || '3. Resultados'} ({pendingResultados.length})</span>
         </button>
 
         <button
@@ -135,7 +137,7 @@ export default function ValidarClient({
           }`}
         >
           <GitCommit className="w-4 h-4" />
-          <span>4. Decisiones ({pendingDecisiones.length})</span>
+          <span>{textosMap['validar.tab.decisiones'] || '4. Decisiones'} ({pendingDecisiones.length})</span>
         </button>
 
         <button
@@ -145,7 +147,7 @@ export default function ValidarClient({
           }`}
         >
           <ArrowLeftRight className="w-4 h-4" />
-          <span>5. Interfaces ({pendingInterfaces.length})</span>
+          <span>{textosMap['validar.tab.interfaces'] || '5. Relaciones'} ({pendingInterfaces.length})</span>
         </button>
       </div>
 
@@ -153,7 +155,7 @@ export default function ValidarClient({
       {activeTab === 'owners' && (
         <div className="space-y-4">
           <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl text-xs text-blue-900">
-            Valida o ajusta el Owner único para cada uno de los 7 procesos organizacionales.
+            {textosMap['validar.banner.owners'] || 'Valida o ajusta el Owner único para cada uno de los 7 procesos organizacionales.'}
           </div>
 
           <div className="space-y-4">
@@ -224,7 +226,7 @@ export default function ValidarClient({
                     disabled={savingId === f.id}
                     className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
                   >
-                    Marcar Revisión
+                    {textosMap['validar.btn.rechazar'] || 'Marcar Revisión'}
                   </button>
 
                   <button
@@ -236,7 +238,7 @@ export default function ValidarClient({
                     disabled={savingId === f.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
                   >
-                    {savingId === f.id ? 'Guardando...' : 'Aprobar Owner'}
+                    {savingId === f.id ? 'Guardando...' : (textosMap['validar.btn.aprobar_owner'] || 'Aprobar Owner')}
                   </button>
                 </div>
               </div>
@@ -249,7 +251,7 @@ export default function ValidarClient({
       {activeTab === 'responsabilidades' && (
         <div className="space-y-4">
           <div className="p-3 bg-purple-50/60 border border-purple-200 rounded-xl text-xs text-purple-900 flex justify-between items-center">
-            <span>Revisión de 118 responsabilidades. Preserva íntegro el texto original y califica el rol ENFOQUE.</span>
+            <span>{textosMap['validar.banner.responsabilidades'] || 'Revisión de responsabilidades. Preserva íntegro el texto original y califica el rol ENFOQUE.'}</span>
             <span className="font-semibold">{pendingResps.length} pendientes</span>
           </div>
 
@@ -333,7 +335,7 @@ export default function ValidarClient({
                     disabled={savingId === r.id}
                     className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
                   >
-                    Requiere Revisión
+                    {textosMap['validar.btn.rechazar'] || 'Requiere Revisión'}
                   </button>
 
                   <button
@@ -345,7 +347,7 @@ export default function ValidarClient({
                     disabled={savingId === r.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
                   >
-                    {savingId === r.id ? 'Guardando...' : 'Aprobar Responsabilidad'}
+                    {savingId === r.id ? 'Guardando...' : (textosMap['validar.btn.aprobar_resp'] || 'Aprobar Responsabilidad')}
                   </button>
                 </div>
               </div>
@@ -422,7 +424,7 @@ export default function ValidarClient({
                     disabled={savingId === res.id}
                     className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
                   >
-                    Marcar Revisión
+                    {textosMap['validar.btn.rechazar'] || 'Marcar Revisión'}
                   </button>
 
                   <button
@@ -435,7 +437,7 @@ export default function ValidarClient({
                     disabled={savingId === res.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
                   >
-                    {savingId === res.id ? 'Guardando...' : 'Aprobar Resultado'}
+                    {savingId === res.id ? 'Guardando...' : (textosMap['validar.btn.aprobar_resultado'] || 'Aprobar Resultado')}
                   </button>
                 </div>
               </div>
@@ -510,7 +512,7 @@ export default function ValidarClient({
                     disabled={savingId === d.id}
                     className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
                   >
-                    Marcar Revisión
+                    {textosMap['validar.btn.rechazar'] || 'Marcar Revisión'}
                   </button>
 
                   <button
@@ -523,7 +525,7 @@ export default function ValidarClient({
                     disabled={savingId === d.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
                   >
-                    {savingId === d.id ? 'Guardando...' : 'Aprobar Autoridad de Decisión'}
+                    {savingId === d.id ? 'Guardando...' : (textosMap['validar.btn.aprobar_decision'] || 'Aprobar Autoridad de Decisión')}
                   </button>
                 </div>
               </div>
@@ -532,7 +534,7 @@ export default function ValidarClient({
         </div>
       )}
 
-      {/* 5. TAB: INTERFACES */}
+      {/* 5. TAB: INTERFACES / RELACIONES */}
       {activeTab === 'interfaces' && (
         <div className="space-y-4">
           <div className="space-y-4">
@@ -587,7 +589,7 @@ export default function ValidarClient({
                     disabled={savingId === i.id}
                     className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold hover:bg-amber-100"
                   >
-                    Marcar Revisión
+                    {textosMap['validar.btn.rechazar'] || 'Marcar Revisión'}
                   </button>
 
                   <button
@@ -599,7 +601,7 @@ export default function ValidarClient({
                     disabled={savingId === i.id}
                     className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
                   >
-                    {savingId === i.id ? 'Guardando...' : 'Aprobar Interfaz'}
+                    {savingId === i.id ? 'Guardando...' : (textosMap['validar.btn.aprobar_interfaz'] || 'Aprobar Relación')}
                   </button>
                 </div>
               </div>

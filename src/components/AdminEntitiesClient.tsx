@@ -1,10 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Frente, Persona, Decision, Interfaz, Responsabilidad, Principio } from '@/lib/types';
-import { TextoSistema } from '@/lib/db';
-import { useUser } from '@/components/UserContext';
-import { isUserAdmin } from '@/lib/auth';
 import {
   Plus,
   Edit2,
@@ -15,6 +11,7 @@ import {
   ArrowLeftRight,
   ClipboardList,
   Compass,
+  Target,
   X,
   Save,
   CheckCircle,
@@ -22,6 +19,10 @@ import {
   UserCheck,
   UserX
 } from 'lucide-react';
+import { Frente, Persona, Decision, Interfaz, Responsabilidad, Principio, Resultado } from '@/lib/types';
+import { TextoSistema } from '@/lib/db';
+import { useUser } from '@/components/UserContext';
+import { isUserAdmin } from '@/lib/auth';
 
 interface AdminEntitiesClientProps {
   initialFrentes: (Frente & { owner_nombre: string | null })[];
@@ -30,6 +31,7 @@ interface AdminEntitiesClientProps {
   initialInterfaces: Interfaz[];
   initialResponsabilidades: (Responsabilidad & { frente_nombre: string; persona_nombre: string })[];
   initialPrincipios: Principio[];
+  initialResultados?: (Resultado & { frente_nombre: string; owner_nombre: string | null })[];
   textos?: TextoSistema[];
 }
 
@@ -40,6 +42,7 @@ export default function AdminEntitiesClient({
   initialInterfaces,
   initialResponsabilidades,
   initialPrincipios,
+  initialResultados = [],
   textos = []
 }: AdminEntitiesClientProps) {
   const { currentUser } = useUser();
@@ -50,11 +53,12 @@ export default function AdminEntitiesClient({
     return found ? found.valor : defaultVal;
   };
 
-  const [activeTab, setActiveTab] = useState<'procesos' | 'personas' | 'decisiones' | 'interfaces' | 'responsabilidades' | 'principios'>('procesos');
+  const [activeTab, setActiveTab] = useState<'procesos' | 'personas' | 'resultados' | 'decisiones' | 'interfaces' | 'responsabilidades' | 'principios'>('procesos');
 
   // Local state
   const [frentes, setFrentes] = useState(initialFrentes);
   const [personas, setPersonas] = useState(initialPersonas);
+  const [resultados, setResultados] = useState(initialResultados);
   const [decisiones, setDecisiones] = useState(initialDecisiones);
   const [interfaces, setInterfaces] = useState(initialInterfaces);
   const [responsabilidades, setResponsabilidades] = useState(initialResponsabilidades);
@@ -87,6 +91,20 @@ export default function AdminEntitiesClient({
         nombre_corto: '',
         nombre_original: '',
         tipo_frente: 'Función permanente',
+        owner_id: personas[0]?.id || '',
+        aporte_estrategico: ''
+      });
+    } else if (type === 'resultado') {
+      const nextNum = resultados.length + 1;
+      const defaultId = `K${nextNum < 10 ? '0' : ''}${nextNum}`;
+      setFormData({
+        id: defaultId,
+        frente_id: frentes[0]?.id || 'F01',
+        resultado: '',
+        indicador: '',
+        meta: '',
+        valor_actual: '',
+        estado: 'Bien',
         owner_id: personas[0]?.id || ''
       });
     } else if (type === 'persona') {
@@ -160,6 +178,18 @@ export default function AdminEntitiesClient({
         nombre_corto: item.nombre_corto,
         nombre_original: item.nombre_original,
         tipo_frente: item.tipo_frente,
+        owner_id: item.owner_id_validado || item.owner_id_propuesto || '',
+        aporte_estrategico: item.aporte_estrategico || ''
+      });
+    } else if (type === 'resultado') {
+      setFormData({
+        id: item.id,
+        frente_id: item.frente_id,
+        resultado: item.resultado_validado || item.resultado_propuesto || '',
+        indicador: item.indicador_validado || item.indicador_sugerido || '',
+        meta: item.meta || '',
+        valor_actual: item.valor_actual || '',
+        estado: item.estado || 'Bien',
         owner_id: item.owner_id_validado || item.owner_id_propuesto || ''
       });
     } else if (type === 'persona') {
@@ -267,6 +297,7 @@ export default function AdminEntitiesClient({
               owner_id_propuesto: formData.owner_id,
               owner_id_validado: formData.owner_id,
               owner_nombre: ownerP?.nombre || null,
+              aporte_estrategico: formData.aporte_estrategico || null,
               estado_definicion: 'Definido',
               estado_validacion: 'DEFINIDO',
               validado_por: currentUser.nombre,
@@ -278,6 +309,32 @@ export default function AdminEntitiesClient({
               alert_count: 0,
               resultado_principal: null
             }
+          ]);
+        } else if (modalType === 'resultado') {
+          const f = frentes.find(item => item.id === formData.frente_id);
+          const p = personas.find(item => item.id === formData.owner_id);
+          setResultados(prev => [
+            {
+              id: formData.id,
+              frente_id: formData.frente_id,
+              frente_nombre: f?.nombre_corto || formData.frente_id,
+              resultado_propuesto: formData.resultado,
+              resultado_validado: formData.resultado,
+              owner_id_propuesto: formData.owner_id || null,
+              owner_id_validado: formData.owner_id || null,
+              owner_nombre: p?.nombre || null,
+              indicador_sugerido: formData.indicador || null,
+              indicador_validado: formData.indicador || null,
+              meta: formData.meta || null,
+              valor_actual: formData.valor_actual || null,
+              estado: formData.estado || 'Bien',
+              estado_definicion: 'Definido',
+              estado_validacion: 'DEFINIDO',
+              validado_por: currentUser.nombre,
+              fecha_validacion: new Date().toISOString(),
+              comentario_validacion: 'Creado vía CMS'
+            },
+            ...prev
           ]);
         } else if (modalType === 'persona') {
           setPersonas(prev => [
@@ -423,9 +480,31 @@ export default function AdminEntitiesClient({
                     nombre_original: formData.nombre_original,
                     tipo_frente: formData.tipo_frente,
                     owner_id_validado: formData.owner_id,
-                    owner_nombre: ownerP?.nombre || null
+                    owner_nombre: ownerP?.nombre || null,
+                    aporte_estrategico: formData.aporte_estrategico || null
                   }
                 : f
+            )
+          );
+        } else if (modalType === 'resultado') {
+          const f = frentes.find(item => item.id === formData.frente_id);
+          const p = personas.find(item => item.id === formData.owner_id);
+          setResultados(prev =>
+            prev.map(r =>
+              r.id === currentEntity.id
+                ? {
+                    ...r,
+                    frente_id: formData.frente_id,
+                    frente_nombre: f?.nombre_corto || r.frente_nombre,
+                    resultado_validado: formData.resultado,
+                    owner_id_validado: formData.owner_id || null,
+                    owner_nombre: p?.nombre || null,
+                    indicador_validado: formData.indicador || null,
+                    meta: formData.meta || null,
+                    valor_actual: formData.valor_actual || null,
+                    estado: formData.estado || 'Bien'
+                  }
+                : r
             )
           );
         } else if (modalType === 'persona') {
@@ -551,6 +630,8 @@ export default function AdminEntitiesClient({
 
       if (type === 'persona') {
         setPersonas(prev => prev.map(p => (p.id === id ? { ...p, activo: 0 } : p)));
+      } else if (type === 'resultado') {
+        setResultados(prev => prev.filter(r => r.id !== id));
       } else if (type === 'decision') {
         setDecisiones(prev => prev.filter(d => d.id !== id));
       } else if (type === 'interfaz') {
@@ -603,6 +684,18 @@ export default function AdminEntitiesClient({
         >
           <Users className="w-4 h-4 text-[#F6911E]" />
           <span>{getText('admin.entidades.subtab.personas', 'Personas')} ({personas.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('resultados')}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all ${
+            activeTab === 'resultados'
+              ? 'bg-[#191919] text-white shadow-xs font-bold'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          <Target className="w-4 h-4 text-[#F6911E]" />
+          <span>{getText('admin.entidades.subtab.resultados', 'Resultados (KPIs)')} ({resultados.length})</span>
         </button>
 
         <button
@@ -807,6 +900,108 @@ export default function AdminEntitiesClient({
                           <span>Desactivar</span>
                         </button>
                       ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* RESULTADOS (KPIS) */}
+      {activeTab === 'resultados' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                <span>{getText('admin.entidades.subtab.resultados', 'Resultados (KPIs)')}</span>
+                <span className="text-xs font-normal text-slate-400">({resultados.length})</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Definición de resultados esperados por macroproceso, indicadores asociados, metas y estado operativo.
+              </p>
+            </div>
+            <button
+              onClick={() => openCreateModal('resultado')}
+              disabled={!isAdmin}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#F6911E] text-[#191919] text-xs font-bold hover:bg-[#FFAA34] transition-colors disabled:opacity-50 shrink-0 self-start sm:self-auto"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{getText('admin.entidades.btn.nuevo_resultado', 'Nuevo Resultado / KPI')}</span>
+            </button>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-x-auto">
+            <table className="w-full min-w-[700px] text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                  <th className="p-3 pl-4">ID</th>
+                  <th className="p-3">Macroproceso</th>
+                  <th className="p-3">Resultado Esperado</th>
+                  <th className="p-3">Indicador / Métrica</th>
+                  <th className="p-3">Meta / Actual</th>
+                  <th className="p-3">Semáforo</th>
+                  <th className="p-3 text-right pr-4">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {resultados.map(r => (
+                  <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="p-3 pl-4 font-mono font-bold text-slate-800">{r.id}</td>
+                    <td className="p-3">
+                      <span className="font-semibold text-slate-900">{r.frente_id}</span>
+                      <div className="text-[11px] text-slate-400 line-clamp-1">{r.frente_nombre || r.frente_id}</div>
+                    </td>
+                    <td className="p-3 max-w-[240px]">
+                      <div className="font-medium text-slate-800 line-clamp-2">
+                        {r.resultado_validado || r.resultado_propuesto}
+                      </div>
+                      {r.owner_nombre && (
+                        <div className="text-[11px] text-slate-400 mt-0.5">Owner: {r.owner_nombre}</div>
+                      )}
+                    </td>
+                    <td className="p-3 text-slate-700">
+                      {r.indicador_validado || r.indicador_sugerido || '—'}
+                    </td>
+                    <td className="p-3">
+                      <div className="font-medium text-slate-800">{r.meta || '—'}</div>
+                      {r.valor_actual && (
+                        <div className="text-[11px] text-slate-400">Actual: {r.valor_actual}</div>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                          r.estado === 'Bien'
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : r.estado === 'Atención'
+                            ? 'bg-amber-50 text-amber-700'
+                            : r.estado === 'Crítico'
+                            ? 'bg-rose-50 text-rose-700'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {r.estado}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right pr-4 space-x-2">
+                      <button
+                        onClick={() => openEditModal('resultado', r)}
+                        disabled={!isAdmin}
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] disabled:opacity-50"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        <span>Editar</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEntity('resultado', r.id, r.resultado_validado || r.resultado_propuesto)}
+                        disabled={!isAdmin}
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-[11px] disabled:opacity-50"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Eliminar</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -1181,6 +1376,8 @@ export default function AdminEntitiesClient({
                 {modalMode === 'create' ? 'Agregar ' : 'Editar '}
                 {modalType === 'proceso'
                   ? getText('admin.entidades.subtab.procesos', 'Proceso')
+                  : modalType === 'resultado'
+                  ? getText('admin.entidades.subtab.resultados', 'Resultado / KPI')
                   : modalType === 'persona'
                   ? getText('admin.entidades.subtab.personas', 'Persona')
                   : modalType === 'decision'
@@ -1242,6 +1439,16 @@ export default function AdminEntitiesClient({
                     />
                   </div>
                   <div>
+                    <label className="block text-slate-600 font-semibold mb-1">Aporte Estratégico al Negocio:</label>
+                    <textarea
+                      rows={2}
+                      value={formData.aporte_estrategico || ''}
+                      onChange={e => setFormData({ ...formData, aporte_estrategico: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      placeholder="¿Cuál es el valor que aporta este frente a la estrategia global?..."
+                    />
+                  </div>
+                  <div>
                     <label className="block text-slate-600 font-semibold mb-1">Tipo de Proceso:</label>
                     <select
                       value={formData.tipo_frente || 'Función permanente'}
@@ -1268,6 +1475,111 @@ export default function AdminEntitiesClient({
                         </option>
                       ))}
                     </select>
+                  </div>
+                </>
+              )}
+
+              {/* RESULTADO (KPI) FORM */}
+              {modalType === 'resultado' && (
+                <>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">ID del Resultado:</label>
+                    <input
+                      type="text"
+                      disabled={modalMode === 'edit'}
+                      required
+                      value={formData.id || ''}
+                      onChange={e => setFormData({ ...formData, id: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold"
+                      placeholder="Ej: K09"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">Macroproceso Asociado:</label>
+                    <select
+                      value={formData.frente_id || ''}
+                      onChange={e => setFormData({ ...formData, frente_id: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                    >
+                      {frentes.map(f => (
+                        <option key={f.id} value={f.id}>
+                          {f.id}: {f.nombre_corto}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">Resultado Esperado:</label>
+                    <textarea
+                      rows={2}
+                      required
+                      value={formData.resultado || ''}
+                      onChange={e => setFormData({ ...formData, resultado: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium"
+                      placeholder="Ej: Incrementar la retención de clientes en un 15%..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Indicador / Métrica:</label>
+                      <input
+                        type="text"
+                        value={formData.indicador || ''}
+                        onChange={e => setFormData({ ...formData, indicador: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        placeholder="Ej: % Churn mensual"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Owner Responsable:</label>
+                      <select
+                        value={formData.owner_id || ''}
+                        onChange={e => setFormData({ ...formData, owner_id: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      >
+                        <option value="">Sin asignar</option>
+                        {personas.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Meta:</label>
+                      <input
+                        type="text"
+                        value={formData.meta || ''}
+                        onChange={e => setFormData({ ...formData, meta: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        placeholder="Ej: < 2.5%"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Valor Actual:</label>
+                      <input
+                        type="text"
+                        value={formData.valor_actual || ''}
+                        onChange={e => setFormData({ ...formData, valor_actual: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        placeholder="Ej: 3.1%"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Semáforo Estado:</label>
+                      <select
+                        value={formData.estado || 'Bien'}
+                        onChange={e => setFormData({ ...formData, estado: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                      >
+                        <option value="Bien">Bien (Verde)</option>
+                        <option value="Atención">Atención (Ámbar)</option>
+                        <option value="Crítico">Crítico (Rojo)</option>
+                        <option value="Sin información">Sin información</option>
+                      </select>
+                    </div>
                   </div>
                 </>
               )}

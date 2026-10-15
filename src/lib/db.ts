@@ -244,15 +244,15 @@ const DEFAULT_TEXTOS: Array<{
   {
     clave: 'admin.entidades.subtab.interfaces',
     seccion: 'Administrador (Subsecciones)',
-    etiqueta: 'Subsección Interfaces',
-    valor: 'Interfaces',
+    etiqueta: 'Subsección Relaciones (ex-Interfaces)',
+    valor: 'Relaciones',
     tipo_campo: 'text'
   },
   {
     clave: 'admin.entidades.btn.nueva_interfaz',
     seccion: 'Administrador (Botones de Acción)',
-    etiqueta: 'Botón Nueva Interfaz',
-    valor: 'Nueva Interfaz',
+    etiqueta: 'Botón Nueva Relación',
+    valor: 'Nueva Relación',
     tipo_campo: 'text'
   },
   {
@@ -284,6 +284,20 @@ const DEFAULT_TEXTOS: Array<{
     tipo_campo: 'text'
   },
   {
+    clave: 'admin.entidades.subtab.resultados',
+    seccion: 'Administrador (Subsecciones)',
+    etiqueta: 'Subsección Resultados (KPIs)',
+    valor: 'Resultados',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'admin.entidades.btn.nuevo_resultado',
+    seccion: 'Administrador (Botones de Acción)',
+    etiqueta: 'Botón Nuevo Resultado',
+    valor: 'Nuevo Resultado',
+    tipo_campo: 'text'
+  },
+  {
     clave: 'footer.tagline',
     seccion: 'Pie de Página (Footer)',
     etiqueta: 'Subtítulo en Pie de Página',
@@ -305,10 +319,66 @@ const DEFAULT_TEXTOS: Array<{
     tipo_campo: 'text'
   },
   {
+    clave: 'nav.item.inicio',
+    seccion: 'Navegación Principal',
+    etiqueta: 'Pestaña Inicio',
+    valor: 'Inicio',
+    tipo_campo: 'text'
+  },
+  {
     clave: 'nav.item.agenda',
     seccion: 'Navegación Principal',
     etiqueta: 'Pestaña Agenda',
     valor: 'Agenda',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'nav.item.enfoque',
+    seccion: 'Navegación Principal',
+    etiqueta: 'Pestaña Mi Enfoque',
+    valor: 'Enfoque',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'nav.item.mapa',
+    seccion: 'Navegación Principal',
+    etiqueta: 'Pestaña Mapa',
+    valor: 'Mapa',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'nav.item.validar',
+    seccion: 'Navegación Principal',
+    etiqueta: 'Pestaña Validar',
+    valor: 'Validar',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'nav.item.revisor',
+    seccion: 'Navegación Principal',
+    etiqueta: 'Pestaña Revisor IA',
+    valor: 'Revisor IA',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'nav.item.auditoria',
+    seccion: 'Navegación Principal',
+    etiqueta: 'Pestaña Auditoría',
+    valor: 'Auditoría',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'nav.item.ajustes',
+    seccion: 'Navegación Principal',
+    etiqueta: 'Pestaña Ajustes (Admin)',
+    valor: 'Ajustes',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'nav.search.placeholder',
+    seccion: 'Navegación Principal',
+    etiqueta: 'Placeholder del Buscador Global',
+    valor: 'Buscar personas, procesos, decisiones, relaciones...',
     tipo_campo: 'text'
   },
   {
@@ -323,6 +393,391 @@ const DEFAULT_TEXTOS: Array<{
     seccion: 'Módulo de Agenda',
     etiqueta: 'Subtítulo de Agenda',
     valor: 'Estructuración ejecutiva de reuniones periódicas basada en bloqueos, decisiones y dependencias vivas.',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'agenda.tab.semanal',
+    seccion: 'Módulo de Agenda',
+    etiqueta: 'Pestaña Reunión Semanal',
+    valor: 'Reunión Semanal',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'agenda.tab.bilateral',
+    seccion: 'Módulo de Agenda',
+    etiqueta: 'Pestaña 1 a 1 (Bilateral)',
+    valor: 'Bilateral (1 a 1)',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'agenda.tab.proceso',
+    seccion: 'Módulo de Agenda',
+    etiqueta: 'Pestaña Por Proceso',
+    valor: 'Por Proceso',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'agenda.tab.minutas',
+    seccion: 'Módulo de Agenda',
+    etiqueta: 'Pestaña Historial de Minutas',
+    valor: 'Historial de Minutas',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'agenda.block1.title',
+    seccion: 'Módulo de Agenda',
+    etiqueta: 'Título Bloque 1 (P1)',
+    valor: 'FOCO CRÍTICO & BLOQUEOS (15 min)',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'agenda.block2.title',
+    seccion: 'Módulo de Agenda',
+    etiqueta: 'Título Bloque 2 (P2)',
+    valor: 'POR DESTRABAR & VALIDAR (10 min)',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'agenda.block3.title',
+    seccion: 'Módulo de Agenda',
+    etiqueta: 'Título Bloque 3 (P3)',
+    valor: 'SEGUIMIENTO OPERATIVO (5 min)',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'interfaces.hero.title',
+    seccion: 'Relaciones y Dependencias',
+    etiqueta: 'Título Principal de la Vista',
+    valor: 'Red de Relaciones y Dependencias Operativas',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'interfaces.hero.subtitle',
+    seccion: 'Relaciones y Dependencias',
+    etiqueta: 'Subtítulo / Tooltip de Relaciones',
+    valor: 'Relaciones A entrega algo a B ➔ B devuelve algo a A. Visualiza la red completa de dependencias, cuellos de botella y centralidad en el equipo.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'interfaces.btn.view_graph',
+    seccion: 'Relaciones y Dependencias',
+    etiqueta: 'Botón Vista Red Visual',
+    valor: 'Red Visual',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'interfaces.btn.view_list',
+    seccion: 'Relaciones y Dependencias',
+    etiqueta: 'Botón Vista Lista de Relaciones',
+    valor: 'Lista de Relaciones',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'interfaces.sidebar.empty_title',
+    seccion: 'Relaciones y Dependencias',
+    etiqueta: 'Título Barra Lateral (Sin Selección)',
+    valor: 'Inspección de Dependencias',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'interfaces.sidebar.empty_desc',
+    seccion: 'Relaciones y Dependencias',
+    etiqueta: 'Instrucción Barra Lateral (Sin Selección)',
+    valor: 'Selecciona una flecha en el grafo para revisar el contrato mutuo de entrega y respuesta.',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'interfaces.btn.validar_contrato',
+    seccion: 'Relaciones y Dependencias',
+    etiqueta: 'Botón Validar / Editar Contrato',
+    valor: 'Validar / Editar Contrato',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.hero.title',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Título Principal de Validación',
+    valor: 'Validar ENFOQUE — Revisión Secuencial',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.hero.subtitle',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Subtítulo Editorial de Validación',
+    valor: 'Flujo paso a paso para ratificar, ajustar o rechazar propuestas preliminares conservando en todo momento el texto original del Excel.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'validar.tab.owners',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Pestaña 1 (Owners de Procesos)',
+    valor: '1. Owners de Procesos',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.tab.responsabilidades',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Pestaña 2 (Responsabilidades)',
+    valor: '2. Responsabilidades',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.tab.resultados',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Pestaña 3 (Resultados)',
+    valor: '3. Resultados',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.tab.decisiones',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Pestaña 4 (Decisiones)',
+    valor: '4. Decisiones',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.tab.interfaces',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Pestaña 5 (Relaciones)',
+    valor: '5. Relaciones',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.banner.owners',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Banner Explicativo Owners',
+    valor: 'Valida o ajusta el Owner único para cada uno de los 7 procesos organizacionales.',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.banner.responsabilidades',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Banner Explicativo Responsabilidades',
+    valor: 'Revisión de responsabilidades. Preserva íntegro el texto original y califica el rol ENFOQUE.',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.btn.rechazar',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Botón Rechazar / Marcar Revisión',
+    valor: 'Marcar Revisión',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.btn.aprobar_owner',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Botón Aprobar Owner',
+    valor: 'Aprobar Owner',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.btn.aprobar_resp',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Botón Aprobar Responsabilidad',
+    valor: 'Aprobar Responsabilidad',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.btn.aprobar_resultado',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Botón Aprobar Resultado',
+    valor: 'Aprobar Resultado',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.btn.aprobar_decision',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Botón Aprobar Autoridad Decisión',
+    valor: 'Aprobar Autoridad de Decisión',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'validar.btn.aprobar_interfaz',
+    seccion: 'Módulo de Validación',
+    etiqueta: 'Botón Aprobar Relación',
+    valor: 'Aprobar Relación',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'decisiones.hero.title',
+    seccion: 'Autoridad y Decisiones',
+    etiqueta: 'Título Principal de Decisiones',
+    valor: 'Mapa de Autoridad y Decisiones',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'decisiones.hero.subtitle',
+    seccion: 'Autoridad y Decisiones',
+    etiqueta: 'Subtítulo de Decisiones',
+    valor: '¿Quién tiene autoridad para decidir qué? Cada decisión organizacional debe tener un único decisor final asignado y personas de consulta explícitas.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'personas.hero.title',
+    seccion: 'Directorio de Personas',
+    etiqueta: 'Título Directorio de Personas',
+    valor: 'Integrantes de la Organización',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'personas.hero.subtitle',
+    seccion: 'Directorio de Personas',
+    etiqueta: 'Subtítulo / Tooltip de Personas',
+    valor: 'Mapa de personas, sus roles clave, territorios de especialidad y cobertura transversal de responsabilidades operativas.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'procesos.hero.title',
+    seccion: 'Procesos de Trabajo',
+    etiqueta: 'Título Principal de Procesos',
+    valor: 'Procesos Organizacionales',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'procesos.hero.subtitle',
+    seccion: 'Procesos de Trabajo',
+    etiqueta: 'Subtítulo de Procesos',
+    valor: 'Los 7 ejes y macroprocesos de operación, resultados e innovación. Haz clic en cualquiera para consultar su estructura completa de gobernanza.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'auditoria.hero.title',
+    seccion: 'Auditoría y Trazabilidad',
+    etiqueta: 'Título Principal de Auditoría',
+    valor: 'Bitácora de Auditoría y Trazabilidad',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'auditoria.hero.subtitle',
+    seccion: 'Auditoría y Trazabilidad',
+    etiqueta: 'Subtítulo de Auditoría',
+    valor: 'Registro cronológico inmutable de cambios en Owners, Roles, Decisiones, Relaciones y Estados de Validación.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'mifoco.hero.tooltip',
+    seccion: 'Mi Enfoque (Personal)',
+    etiqueta: 'Tooltip de Mi Enfoque',
+    valor: 'Resumen operativo personal: responsabilidades de accountability, autoridad de decisión y dependencias mutuas.',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'mifoco.bloque.territorio',
+    seccion: 'Mi Enfoque (Personal)',
+    etiqueta: 'Título Bloque Mi Territorio',
+    valor: 'Mi Territorio',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'mifoco.bloque.depende',
+    seccion: 'Mi Enfoque (Personal)',
+    etiqueta: 'Título Bloque Lo Que Depende de Mí',
+    valor: 'Lo Que Depende de Mí',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'mifoco.bloque.contribuyo',
+    seccion: 'Mi Enfoque (Personal)',
+    etiqueta: 'Título Bloque Donde Contribuyo',
+    valor: 'Donde Contribuyo',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'manifiesto.banner.badge',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Badge Superior del Manifiesto',
+    valor: '⚡ Estrategia PHPVKS 3.0',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'manifiesto.hero.title',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Título Central del Manifiesto',
+    valor: 'Valor agregado por ser capaces de entender el target de una iniciativa de negocio mejor que nadie',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'manifiesto.hero.subtitle',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Subtítulo del Manifiesto',
+    valor: 'Sostenemos una perspectiva propia, casi autoral, que orienta cada proceso de la agencia a través de tres premisas fundamentales:',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'manifiesto.p1.title',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Título Premisa 01',
+    valor: 'No existe un consumidor plano',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'manifiesto.p1.desc',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Descripción Premisa 01',
+    valor: 'Más allá de reducirlo a perfil, NSE o demografía, comprendemos las formas concretas de ser alguien frente a una categoría u oferta. Si cada target posee su propio sentido común, es un sistema de interpretación en sí mismo: lee valor, riesgo, deseo y pertenencia bajo tensiones específicas.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'manifiesto.p2.title',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Título Premisa 02',
+    valor: 'Práctica interpretativa y crítica',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'manifiesto.p2.desc',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Descripción Premisa 02',
+    valor: 'El oficio de entender al otro es más humano que técnico. Exige escuchar lo que el dato no dice sin negarlo, subordinándolo al contexto. Investigar es desobedecer el supuesto y ejercer una mirada crítica guiada por hipótesis afiladas para revelar el malentendido entre lo que el negocio cree evidente y lo que las personas reconocen como valor.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'manifiesto.p3.title',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Título Premisa 03',
+    valor: 'El target como principio de realidad',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'manifiesto.p3.desc',
+    seccion: 'Manifiesto Estratégico PHPVKS 3.0',
+    etiqueta: 'Descripción Premisa 03',
+    valor: 'Menos consumidor y más circunstancia: entendemos desde las tensiones, contradicciones y contextos que condicionan sus decisiones. No basta con preguntar qué opina, hay que comprender el mundo desde el que valora y decide. Confrontamos las aspiraciones del negocio con sus propios códigos de sentido.',
+    tipo_campo: 'textarea'
+  },
+  {
+    clave: 'roles.owner.desc',
+    seccion: 'Taxonomía de Roles',
+    etiqueta: 'Definición Rol: Owner (O)',
+    valor: 'Owner del Proceso: máxima responsabilidad y accountability sobre el resultado final',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'roles.decide.desc',
+    seccion: 'Taxonomía de Roles',
+    etiqueta: 'Definición Rol: Decide (D)',
+    valor: 'Decide: autoridad para tomar decisiones y dar aprobaciones finales',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'roles.ejecuta.desc',
+    seccion: 'Taxonomía de Roles',
+    etiqueta: 'Definición Rol: Ejecuta (E)',
+    valor: 'Ejecuta: realiza directamente las tareas y entregables de trabajo',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'roles.contribuye.desc',
+    seccion: 'Taxonomía de Roles',
+    etiqueta: 'Definición Rol: Contribuye (C)',
+    valor: 'Contribuye: aporta insumos, análisis o soporte en la ejecución',
+    tipo_campo: 'text'
+  },
+  {
+    clave: 'roles.informado.desc',
+    seccion: 'Taxonomía de Roles',
+    etiqueta: 'Definición Rol: Informado (I)',
+    valor: 'Informado: debe mantenerse al tanto del avance y resultados',
     tipo_campo: 'text'
   }
 ];

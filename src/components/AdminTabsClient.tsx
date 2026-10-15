@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useUser } from '@/components/UserContext';
 import { isUserAdmin } from '@/lib/auth';
 import { TextoSistema } from '@/lib/db';
-import { Frente, Persona, Decision, Interfaz, Responsabilidad, Principio } from '@/lib/types';
+import { Frente, Persona, Decision, Interfaz, Responsabilidad, Principio, Resultado } from '@/lib/types';
 import AdminTextosClient from './AdminTextosClient';
 import AdminEntitiesClient from './AdminEntitiesClient';
 import AdminTelemetryView from './AdminTelemetryView';
@@ -20,6 +20,7 @@ interface AdminTabsClientProps {
   initialInterfaces: Interfaz[];
   initialResponsabilidades: (Responsabilidad & { frente_nombre: string; persona_nombre: string })[];
   initialPrincipios: Principio[];
+  initialResultados: (Resultado & { frente_nombre: string; owner_nombre: string | null })[];
 }
 
 export default function AdminTabsClient(props: AdminTabsClientProps) {
@@ -137,6 +138,7 @@ export default function AdminTabsClient(props: AdminTabsClientProps) {
             initialInterfaces={props.initialInterfaces}
             initialResponsabilidades={props.initialResponsabilidades}
             initialPrincipios={props.initialPrincipios}
+            initialResultados={props.initialResultados}
             textos={textos}
           />
         )}

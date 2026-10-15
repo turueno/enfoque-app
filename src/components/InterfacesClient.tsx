@@ -22,12 +22,14 @@ interface InterfacesClientProps {
   initialInterfaces: Interfaz[];
   personas: Persona[];
   frentes: Frente[];
+  textosMap?: Record<string, string>;
 }
 
 export default function InterfacesClient({
   initialInterfaces,
   personas,
   frentes,
+  textosMap = {},
 }: InterfacesClientProps) {
   const { currentUser } = useUser();
   const [interfaces, setInterfaces] = useState(initialInterfaces);
@@ -194,7 +196,7 @@ export default function InterfacesClient({
               }`}
             >
               <Network className="w-3.5 h-3.5" />
-              <span>Red Visual</span>
+              <span>{textosMap['interfaces.btn.view_graph'] || 'Red Visual'}</span>
             </button>
             <button
               onClick={() => setViewMode('list')}
@@ -203,7 +205,7 @@ export default function InterfacesClient({
               }`}
             >
               <List className="w-3.5 h-3.5" />
-              <span>Lista de Interfaces</span>
+              <span>{textosMap['interfaces.btn.view_list'] || 'Lista de Relaciones'}</span>
             </button>
           </div>
         </div>
@@ -331,7 +333,7 @@ export default function InterfacesClient({
             <div>
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-bold text-slate-900">
-                  {selectedInterface ? `Detalle de Interfaz ${selectedInterface.id}` : 'Inspección de Dependencias'}
+                  {selectedInterface ? `Detalle de Relación ${selectedInterface.id}` : (textosMap['interfaces.sidebar.empty_title'] || 'Inspección de Dependencias')}
                 </h3>
                 {selectedInterface && (
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
@@ -346,7 +348,7 @@ export default function InterfacesClient({
               {!selectedInterface ? (
                 <div className="py-12 text-center text-xs text-slate-400 space-y-2">
                   <ArrowLeftRight className="w-8 h-8 text-slate-300 mx-auto" />
-                  <p>Selecciona una flecha en el grafo para revisar el contrato mutuo de entrega y respuesta.</p>
+                  <p>{textosMap['interfaces.sidebar.empty_desc'] || 'Selecciona una flecha en el grafo para revisar el contrato mutuo de entrega y respuesta.'}</p>
                 </div>
               ) : (
                 <div className="space-y-4 mt-3 text-xs">
@@ -399,7 +401,7 @@ export default function InterfacesClient({
                   onClick={() => handleEditInterface(selectedInterface)}
                   className="w-full px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 text-center"
                 >
-                  Validar / Editar Contrato
+                  {textosMap['interfaces.btn.validar_contrato'] || 'Validar / Editar Contrato'}
                 </button>
               </div>
             )}

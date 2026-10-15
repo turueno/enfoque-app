@@ -87,19 +87,19 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
   }, []);
 
   const navItems = [
-    { name: 'Inicio', href: '/', icon: Compass },
+    { name: textosMap['nav.item.inicio'] || 'Inicio', href: '/', icon: Compass },
     { name: textosMap['nav.item.agenda'] || 'Agenda', href: '/agenda', icon: Calendar },
     { name: textosMap['nav.item.enfoque'] || 'Enfoque', href: '/mi-enfoque', icon: User },
-    { name: 'Mapa', href: '/mapa', icon: Grid },
+    { name: textosMap['nav.item.mapa'] || 'Mapa', href: '/mapa', icon: Grid },
     { name: textosMap['admin.entidades.subtab.procesos'] || 'Procesos', href: '/procesos', icon: Layers },
     { name: textosMap['admin.entidades.subtab.personas'] || 'Personas', href: '/personas', icon: Users },
     { name: textosMap['admin.entidades.subtab.decisiones'] || 'Decisiones', href: '/decisiones', icon: GitCommit },
-    { name: textosMap['admin.entidades.subtab.interfaces'] || 'Interfaces', href: '/interfaces', icon: ArrowLeftRight },
-    { name: 'Validar', href: '/validar', icon: CheckCircle2 },
+    { name: textosMap['admin.entidades.subtab.interfaces'] || 'Relaciones', href: '/interfaces', icon: ArrowLeftRight },
+    { name: textosMap['nav.item.validar'] || 'Validar', href: '/validar', icon: CheckCircle2 },
     { name: textosMap['admin.entidades.subtab.principios'] || 'Principios', href: '/principios', icon: BookOpen },
-    { name: 'Revisor IA', href: '/revisor', icon: Sparkles },
-    { name: 'Auditoría', href: '/auditoria', icon: History },
-    { name: 'Ajustes', href: '/admin', icon: Settings }
+    { name: textosMap['nav.item.revisor'] || 'Revisor IA', href: '/revisor', icon: Sparkles },
+    { name: textosMap['nav.item.auditoria'] || 'Auditoría', href: '/auditoria', icon: History },
+    { name: textosMap['nav.item.ajustes'] || 'Ajustes', href: '/admin', icon: Settings }
   ];
 
   return (
@@ -133,7 +133,7 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Buscar proceso, persona, decisión, rol..."
+                placeholder={textosMap['nav.search.placeholder'] || 'Buscar personas, procesos, decisiones, relaciones...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-1.5 bg-slate-50 hover:bg-slate-100 focus:bg-white text-sm text-[#191919] placeholder-slate-400 rounded-full border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#F6911E]/30 focus:border-[#F6911E] transition-all"

@@ -30,10 +30,34 @@ export async function POST(req: Request) {
     if (tipo === 'frente' || tipo === 'proceso') {
       const id = data.id?.trim() || `F${String(Date.now()).slice(-2)}`;
       db.prepare(`
-        INSERT INTO frentes (id, nombre_corto, nombre_original, tipo_frente, owner_id_propuesto, owner_id_validado, estado_definicion, estado_validacion)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, data.nombre_corto, data.nombre_original || data.nombre_corto, data.tipo_frente || 'Función permanente', data.owner_id || null, data.owner_id || null, 'Definido', 'DEFINIDO');
+        INSERT INTO frentes (id, nombre_corto, nombre_original, tipo_frente, owner_id_propuesto, owner_id_validado, aporte_estrategico, estado_definicion, estado_validacion)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, data.nombre_corto, data.nombre_original || data.nombre_corto, data.tipo_frente || 'Función permanente', data.owner_id || null, data.owner_id || null, data.aporte_estrategico || null, 'Definido', 'DEFINIDO');
       logAudit(usuario, 'frente', id, 'creacion', null, data.nombre_corto, 'Creación desde panel administrativo');
+      return NextResponse.json({ success: true, id });
+    }
+
+    if (tipo === 'resultado') {
+      const id = data.id?.trim() || `K${String(Date.now()).slice(-3)}`;
+      db.prepare(`
+        INSERT INTO resultados (id, frente_id, resultado_propuesto, resultado_validado, owner_id_propuesto, owner_id_validado, indicador_sugerido, indicador_validado, meta, valor_actual, estado, estado_definicion, estado_validacion)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id,
+        data.frente_id,
+        data.resultado,
+        data.resultado,
+        data.owner_id || null,
+        data.owner_id || null,
+        data.indicador || null,
+        data.indicador || null,
+        data.meta || null,
+        data.valor_actual || null,
+        data.estado || 'Bien',
+        'Definido',
+        'DEFINIDO'
+      );
+      logAudit(usuario, 'resultado', id, 'creacion', null, data.resultado, 'Creación desde panel administrativo');
       return NextResponse.json({ success: true, id });
     }
 
@@ -149,17 +173,41 @@ export async function PUT(req: Request) {
 
       db.prepare(`
         UPDATE frentes 
-        SET nombre_corto = ?, nombre_original = ?, tipo_frente = ?, owner_id_validado = ?
+        SET nombre_corto = ?, nombre_original = ?, tipo_frente = ?, owner_id_validado = ?, aporte_estrategico = ?
         WHERE id = ?
       `).run(
         data.nombre_corto,
         data.nombre_original || data.nombre_corto,
         data.tipo_frente || 'Función permanente',
         data.owner_id || null,
+        data.aporte_estrategico || null,
         id
       );
 
       logAudit(usuario, 'frente', id, 'edicion_integral', String(current.nombre_corto), data.nombre_corto, 'Actualización desde panel administrativo');
+      return NextResponse.json({ success: true });
+    }
+
+    if (tipo === 'resultado') {
+      const current = queryOne<Record<string, unknown>>('SELECT * FROM resultados WHERE id = ?', id);
+      if (!current) return NextResponse.json({ error: 'Resultado no encontrado' }, { status: 404 });
+
+      db.prepare(`
+        UPDATE resultados 
+        SET frente_id = ?, resultado_validado = ?, owner_id_validado = ?, indicador_validado = ?, meta = ?, valor_actual = ?, estado = ?
+        WHERE id = ?
+      `).run(
+        data.frente_id,
+        data.resultado,
+        data.owner_id || null,
+        data.indicador || null,
+        data.meta || null,
+        data.valor_actual || null,
+        data.estado || 'Bien',
+        id
+      );
+
+      logAudit(usuario, 'resultado', id, 'edicion_integral', String(current.resultado_validado || current.resultado_propuesto), data.resultado, 'Actualización desde panel administrativo');
       return NextResponse.json({ success: true });
     }
 
@@ -288,6 +336,12 @@ export async function DELETE(req: Request) {
     if (tipo === 'decision') {
       db.prepare('DELETE FROM decisiones WHERE id = ?').run(id);
       logAudit(usuario, 'decision', id, 'eliminacion', id, null, 'Eliminación desde panel administrativo');
+      return NextResponse.json({ success: true });
+    }
+
+    if (tipo === 'resultado') {
+      db.prepare('DELETE FROM resultados WHERE id = ?').run(id);
+      logAudit(usuario, 'resultado', id, 'eliminacion', id, null, 'Eliminación desde panel administrativo');
       return NextResponse.json({ success: true });
     }
 
