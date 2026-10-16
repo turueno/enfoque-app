@@ -119,11 +119,6 @@ export default function DashboardClient({
       return;
     }
 
-    if (!isAdmin) {
-      setErrorMsg('Solo los administradores autorizados pueden capturar cortes de gobernanza.');
-      return;
-    }
-
     setIsSubmitting(true);
     setErrorMsg(null);
 
@@ -656,12 +651,6 @@ export default function DashboardClient({
               </button>
             </div>
 
-            {!isAdmin && (
-              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                Solo los administradores autorizados (José Antonio Turueño) pueden generar nuevos cortes históricos.
-              </div>
-            )}
-
             {errorMsg && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800">
                 {errorMsg}
@@ -726,7 +715,7 @@ export default function DashboardClient({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || !isAdmin}
+                  disabled={isSubmitting}
                   className="px-4 py-2 rounded-lg bg-[#191919] hover:bg-[#2b2b2b] text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Guardando...' : 'Guardar Fotografía'}

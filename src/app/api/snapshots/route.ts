@@ -4,7 +4,7 @@ import {
   createDashboardSnapshot,
   deleteDashboardSnapshot
 } from '@/lib/snapshots';
-import { isUserAdmin } from '@/lib/auth';
+import { isAdminAuthenticated } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,21 +32,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verificar permisos de administrador
-    if (!isUserAdmin(userId, userEmail)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Acceso denegado: solo los administradores autorizados pueden capturar cortes de gobernanza.'
-        },
-        { status: 403 }
-      );
-    }
-
     const snapshot = createDashboardSnapshot(
       titulo.trim(),
       notas ? notas.trim() : null,
-      userName || userEmail || 'Administrador',
+      userName || userEmail || 'Colaborador',
       userId || null
     );
 
@@ -61,26 +50,26 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const isAuth = await isAdminAuthenticated();
+    if (!isAuth) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Acceso denegado: solo el administrador autenticado puede eliminar cortes históricos.'
+        },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-    const userId = searchParams.get('userId');
-    const userEmail = searchParams.get('userEmail');
     const userName = searchParams.get('userName');
+    const userEmail = searchParams.get('userEmail');
 
     if (!id) {
       return NextResponse.json(
         { success: false, error: 'ID de snapshot no proporcionado' },
         { status: 400 }
-      );
-    }
-
-    if (!isUserAdmin(userId, userEmail)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Acceso denegado: solo los administradores pueden eliminar cortes históricos.'
-        },
-        { status: 403 }
       );
     }
 
