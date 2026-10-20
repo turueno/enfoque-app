@@ -94,33 +94,12 @@ export default function AdminEntitiesClient({
         owner_id: personas[0]?.id || '',
         aporte_estrategico: ''
       });
-    } else if (type === 'resultado') {
-      const nextNum = resultados.length + 1;
-      const defaultId = `K${nextNum < 10 ? '0' : ''}${nextNum}`;
-      setFormData({
-        id: defaultId,
-        frente_id: frentes[0]?.id || 'F01',
-        resultado: '',
-        indicador: '',
-        meta: '',
-        valor_actual: '',
-        estado: 'Bien',
-        owner_id: personas[0]?.id || ''
-      });
-    } else if (type === 'persona') {
-      const nextNum = personas.length + 1;
-      const defaultId = `P0${nextNum}`;
-      setFormData({
-        id: defaultId,
-        nombre: '',
-        email: '',
-        rol_funcional: '',
-        territorio: '',
-        nota: '',
-        activo: true
-      });
     } else if (type === 'decision') {
-      const nextNum = decisiones.length + 1;
+      const maxNum = decisiones.reduce((max, d) => {
+        const match = d.id.match(/^D(\d+)$/);
+        return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
+      const nextNum = maxNum > 0 ? maxNum + 1 : decisiones.length + 1;
       const defaultId = `D${nextNum < 10 ? '0' : ''}${nextNum}`;
       setFormData({
         id: defaultId,
@@ -130,8 +109,28 @@ export default function AdminEntitiesClient({
         consultar_a: '',
         momento: ''
       });
+    } else if (type === 'persona') {
+      const maxNum = personas.reduce((max, p) => {
+        const match = p.id.match(/^P(\d+)$/);
+        return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
+      const nextNum = maxNum > 0 ? maxNum + 1 : personas.length + 1;
+      const defaultId = `P${nextNum < 10 ? '0' : ''}${nextNum}`;
+      setFormData({
+        id: defaultId,
+        nombre: '',
+        email: '',
+        rol_funcional: '',
+        territorio: '',
+        nota: '',
+        activo: true
+      });
     } else if (type === 'interfaz') {
-      const nextNum = interfaces.length + 1;
+      const maxNum = interfaces.reduce((max, i) => {
+        const match = i.id.match(/^I(\d+)$/);
+        return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
+      const nextNum = maxNum > 0 ? maxNum + 1 : interfaces.length + 1;
       const defaultId = `I${nextNum < 10 ? '0' : ''}${nextNum}`;
       setFormData({
         id: defaultId,
@@ -143,7 +142,11 @@ export default function AdminEntitiesClient({
         estado: 'Operativa'
       });
     } else if (type === 'responsabilidad') {
-      const nextNum = responsabilidades.length + 1;
+      const maxNum = responsabilidades.reduce((max, r) => {
+        const match = r.id.match(/^R(\d+)$/);
+        return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
+      const nextNum = maxNum > 0 ? maxNum + 1 : responsabilidades.length + 1;
       const defaultId = `R${String(nextNum).padStart(3, '0')}`;
       setFormData({
         id: defaultId,
@@ -151,6 +154,23 @@ export default function AdminEntitiesClient({
         persona_id: personas[0]?.id || '',
         responsabilidad: '',
         rol: 'Ejecuta'
+      });
+    } else if (type === 'resultado') {
+      const maxNum = resultados.reduce((max, r) => {
+        const match = r.id.match(/^K(\d+)$/);
+        return match ? Math.max(max, parseInt(match[1], 10)) : max;
+      }, 0);
+      const nextNum = maxNum > 0 ? maxNum + 1 : resultados.length + 1;
+      const defaultId = `K${nextNum < 10 ? '0' : ''}${nextNum}`;
+      setFormData({
+        id: defaultId,
+        frente_id: frentes[0]?.id || 'F01',
+        resultado: '',
+        indicador: '',
+        meta: '',
+        valor_actual: '',
+        estado: 'Bien',
+        owner_id: personas[0]?.id || ''
       });
     } else if (type === 'principio') {
       const nextNum = principios.length + 1;
@@ -1661,6 +1681,18 @@ export default function AdminEntitiesClient({
               {modalType === 'decision' && (
                 <>
                   <div>
+                    <label className="block text-slate-600 font-semibold mb-1">ID de la Decisión:</label>
+                    <input
+                      type="text"
+                      disabled={modalMode === 'edit'}
+                      required
+                      value={formData.id || ''}
+                      onChange={e => setFormData({ ...formData, id: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold"
+                      placeholder="Ej: D16"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-slate-600 font-semibold mb-1">Proceso Relacionado:</label>
                     <select
                       value={formData.frente_id || ''}
@@ -1726,6 +1758,18 @@ export default function AdminEntitiesClient({
               {/* INTERFAZ FORM */}
               {modalType === 'interfaz' && (
                 <>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">ID de la Relación:</label>
+                    <input
+                      type="text"
+                      disabled={modalMode === 'edit'}
+                      required
+                      value={formData.id || ''}
+                      onChange={e => setFormData({ ...formData, id: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold"
+                      placeholder="Ej: I16"
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-slate-600 font-semibold mb-1">De (Emisor):</label>
@@ -1808,6 +1852,18 @@ export default function AdminEntitiesClient({
               {/* RESPONSABILIDAD FORM */}
               {modalType === 'responsabilidad' && (
                 <>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">ID de la Responsabilidad:</label>
+                    <input
+                      type="text"
+                      disabled={modalMode === 'edit'}
+                      required
+                      value={formData.id || ''}
+                      onChange={e => setFormData({ ...formData, id: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold"
+                      placeholder="Ej: R122"
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-slate-600 font-semibold mb-1">Proceso:</label>
