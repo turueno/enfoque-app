@@ -36,6 +36,7 @@ export default function DecisionesClient({
   const [newDecisorId, setNewDecisorId] = useState(personas[0]?.id || 'P01');
   const [newConsultarA, setNewConsultarA] = useState('');
   const [newMomento, setNewMomento] = useState('');
+  const [newErrorMsg, setNewErrorMsg] = useState<string | null>(null);
 
   const filteredDecisiones = decisiones.filter(d => {
     if (frenteFilter !== 'ALL' && d.frente_id !== frenteFilter) return false;
@@ -98,6 +99,7 @@ export default function DecisionesClient({
     e.preventDefault();
     if (!newDecision.trim()) return;
     setSaving(true);
+    setNewErrorMsg(null);
     try {
       const res = await fetch('/api/entities', {
         method: 'POST',
@@ -115,6 +117,9 @@ export default function DecisionesClient({
         })
       });
       const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || 'No fue posible crear la decisión');
+      }
       if (result.success) {
         const decPersona = personas.find(p => p.id === newDecisorId);
         const frenteObj = frentes.find(f => f.id === newFrenteId);
@@ -143,8 +148,9 @@ export default function DecisionesClient({
         setNewConsultarA('');
         setNewMomento('');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setNewErrorMsg(e.message || 'Error al guardar la decisión');
     } finally {
       setSaving(false);
     }
@@ -388,6 +394,13 @@ export default function DecisionesClient({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {newErrorMsg && (
+              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center space-x-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>{newErrorMsg}</span>
+              </div>
+            )}
 
             <div className="space-y-3 text-xs">
               <div>

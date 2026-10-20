@@ -7,13 +7,17 @@ import { isAdminAuthenticated } from '@/lib/adminAuth';
  */
 export async function POST(req: Request) {
   try {
-    const isAuth = await isAdminAuthenticated();
-    if (!isAuth) {
-      return NextResponse.json({ error: 'Acceso denegado: se requiere sesión activa de administrador.' }, { status: 401 });
-    }
-
     const body = await req.json();
-    const { tipo, data, usuario = 'Administrador' } = body;
+    const { tipo, data, usuario = 'Colaborador' } = body;
+
+    // La creación de decisiones desde la vista general de Decisiones está abierta a todos los colaboradores
+    // Para el resto de entidades estructurales creadas desde /admin, se requiere sesión de administrador
+    if (tipo !== 'decision') {
+      const isAuth = await isAdminAuthenticated();
+      if (!isAuth) {
+        return NextResponse.json({ error: 'Acceso denegado: se requiere sesión activa de administrador.' }, { status: 401 });
+      }
+    }
 
     const db = getDb();
 
@@ -72,12 +76,21 @@ export async function POST(req: Request) {
     }
 
     if (tipo === 'decision') {
-      const id = data.id?.trim() || `D${String(Date.now()).slice(-2)}`;
+      let id = data.id?.trim();
+      if (!id) {
+        const rows = db.prepare('SELECT id FROM decisiones').all() as { id: string }[];
+        const maxNum = rows.reduce((max, r) => {
+          const match = r.id.match(/^D(\d+)$/);
+          return match ? Math.max(max, parseInt(match[1], 10)) : max;
+        }, 0);
+        const nextNum = maxNum > 0 ? maxNum + 1 : rows.length + 1;
+        id = `D${nextNum < 10 ? '0' : ''}${nextNum}`;
+      }
       db.prepare(`
         INSERT INTO decisiones (id, frente_id, decision, decisor_propuesto_id, decisor_validado_id, consultar_a_propuesto, momento_trigger, estado_definicion, estado_validacion)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(id, data.frente_id, data.decision, data.decisor_id || null, data.decisor_id || null, data.consultar_a || null, data.momento || null, 'Definido', 'DEFINIDO');
-      logAudit(usuario, 'decision', id, 'creacion', null, data.decision, 'Creación desde panel administrativo');
+      logAudit(usuario, 'decision', id, 'creacion', null, data.decision, 'Creación de decisión');
       return NextResponse.json({ success: true, id });
     }
 
