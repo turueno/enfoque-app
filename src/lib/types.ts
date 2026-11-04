@@ -240,6 +240,7 @@ export interface TemaImpacto {
   horizonte_temporal: '30 días' | '60 días' | '90 días' | 'Fin de año' | 'Personalizado';
   fecha_limite: string | null;
   frente_id: string | null;
+  frentes_ids_json?: string; // JSON array of string IDs (o columna opcional)
   resultado_id: string | null;
   responsable_id: string | null;
   involucrados_ids_json: string; // JSON array of string IDs
@@ -253,6 +254,8 @@ export interface TemaImpacto {
   updated_at: string;
   // Propiedades unidas/hidratadas opcionales
   frente_nombre?: string;
+  frentes_ids?: string[];
+  frentes_nombres?: string[];
   responsable_nombre?: string;
   resultado_titulo?: string;
   involucrados_nombres?: string[];

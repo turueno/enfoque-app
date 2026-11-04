@@ -377,7 +377,7 @@ function getAllRawAgendaItems(): AgendaItem[] {
       prioridad_efectiva: calcPrioridad,
       estado: t.estado,
       involucrados,
-      frente_nombre: t.frente_nombre || t.frente_id || undefined,
+      frente_nombre: t.frentes_nombres && t.frentes_nombres.length > 0 ? t.frentes_nombres.join(', ') : (t.frente_nombre || t.frente_id || undefined),
       accion_sugerida: `Resolver iniciativa de impacto [Horizonte: ${t.horizonte_temporal}]`,
       detalles: {
         id: t.id,
@@ -385,6 +385,7 @@ function getAllRawAgendaItems(): AgendaItem[] {
         fecha_limite: t.fecha_limite,
         responsable_id: t.responsable_id,
         frente_id: t.frente_id,
+        frentes_ids: t.frentes_ids || (t.frente_id ? [t.frente_id] : []),
         estado: t.estado
       }
     });
@@ -564,11 +565,14 @@ export function getAgendaProceso(
   }
 
   const filtered = rawItems.filter(item => {
+    const frentesIdsItem: string[] = item.detalles?.frentes_ids || [];
     return (
       item.frente_nombre === frente.nombre_corto ||
       item.frente_nombre === frente.id ||
       (item.detalles?.frente_id === frente.id) ||
-      (item.frente_nombre && item.frente_nombre.includes(frente.id))
+      frentesIdsItem.includes(frente.id) ||
+      (item.frente_nombre && item.frente_nombre.includes(frente.id)) ||
+      (item.frente_nombre && item.frente_nombre.includes(frente.nombre_corto))
     );
   });
 

@@ -889,6 +889,7 @@ function initTemasImpactoTable(db: DatabaseSync) {
       horizonte_temporal TEXT NOT NULL,
       fecha_limite TEXT,
       frente_id TEXT,
+      frentes_ids_json TEXT DEFAULT '[]',
       resultado_id TEXT,
       responsable_id TEXT,
       involucrados_ids_json TEXT DEFAULT '[]',
@@ -905,6 +906,10 @@ function initTemasImpactoTable(db: DatabaseSync) {
     CREATE INDEX IF NOT EXISTS idx_temas_impacto_responsable ON temas_impacto(responsable_id);
     CREATE INDEX IF NOT EXISTS idx_temas_impacto_estado ON temas_impacto(estado);
   `);
+
+  try {
+    db.exec("ALTER TABLE temas_impacto ADD COLUMN frentes_ids_json TEXT DEFAULT '[]';");
+  } catch {}
 }
 
 export function getDb(): DatabaseSync {

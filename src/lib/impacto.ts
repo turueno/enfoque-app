@@ -73,9 +73,29 @@ export function getTemasImpacto(options?: {
       .map(id => personasMap.get(id))
       .filter(Boolean) as string[];
 
+    let frentesIds: string[] = [];
+    try {
+      if (r.frentes_ids_json) {
+        frentesIds = JSON.parse(r.frentes_ids_json);
+      }
+    } catch {}
+
+    if ((!frentesIds || frentesIds.length === 0) && r.frente_id) {
+      // Soporta formato separado por comas o id simple
+      frentesIds = r.frente_id.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    const frentesNombres = frentesIds
+      .map(id => frentesMap.get(id))
+      .filter(Boolean) as string[];
+
+    const principalNombre = frentesNombres.length > 0 ? frentesNombres.join(', ') : (r.frente_id ? frentesMap.get(r.frente_id) : undefined);
+
     return {
       ...r,
-      frente_nombre: r.frente_id ? frentesMap.get(r.frente_id) : undefined,
+      frente_nombre: principalNombre,
+      frentes_ids: frentesIds,
+      frentes_nombres: frentesNombres,
       responsable_nombre: r.responsable_id ? personasMap.get(r.responsable_id) : undefined,
       involucrados_nombres: involucradosNombres
     };
@@ -91,6 +111,7 @@ export function createTemaImpacto(data: {
   horizonte_temporal: '30 días' | '60 días' | '90 días' | 'Fin de año' | 'Personalizado';
   fecha_limite?: string | null;
   frente_id?: string | null;
+  frentes_ids?: string[];
   resultado_id?: string | null;
   responsable_id?: string | null;
   involucrados_ids?: string[];
@@ -103,14 +124,20 @@ export function createTemaImpacto(data: {
   const user = data.usuario || 'Colaborador';
   const involucradosJson = JSON.stringify(data.involucrados_ids || []);
 
+  const frentesList = data.frentes_ids && data.frentes_ids.length > 0
+    ? data.frentes_ids
+    : (data.frente_id ? [data.frente_id] : []);
+  const frentesJson = JSON.stringify(frentesList);
+  const primaryFrenteId = frentesList[0] || data.frente_id || null;
+
   const stmt = db.prepare(`
     INSERT INTO temas_impacto (
       id, titulo, descripcion, horizonte_temporal, fecha_limite,
-      frente_id, resultado_id, responsable_id, involucrados_ids_json,
+      frente_id, frentes_ids_json, resultado_id, responsable_id, involucrados_ids_json,
       estado, prioridad, decisiones_generadas_ids_json,
       responsabilidades_generadas_ids_json, interfaces_generadas_ids_json,
       created_at, created_by, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'En curso', ?, '[]', '[]', '[]', ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'En curso', ?, '[]', '[]', '[]', ?, ?, ?)
   `);
 
   stmt.run(
@@ -119,7 +146,8 @@ export function createTemaImpacto(data: {
     data.descripcion?.trim() || null,
     data.horizonte_temporal,
     data.fecha_limite || null,
-    data.frente_id || null,
+    primaryFrenteId,
+    frentesJson,
     data.resultado_id || null,
     data.responsable_id || null,
     involucradosJson,

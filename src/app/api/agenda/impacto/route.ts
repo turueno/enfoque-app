@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
         horizonte_temporal: data.horizonte_temporal || '90 días',
         fecha_limite: data.fecha_limite,
         frente_id: data.frente_id,
+        frentes_ids: data.frentes_ids,
         resultado_id: data.resultado_id,
         responsable_id: data.responsable_id,
         involucrados_ids: data.involucrados_ids,

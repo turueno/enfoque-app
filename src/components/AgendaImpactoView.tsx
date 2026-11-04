@@ -59,7 +59,7 @@ export default function AgendaImpactoView({
   const [descripcion, setDescripcion] = useState('');
   const [horizonte, setHorizonte] = useState<'30 días' | '60 días' | '90 días' | 'Fin de año' | 'Personalizado'>('90 días');
   const [fechaLimite, setFechaLimite] = useState('');
-  const [frenteId, setFrenteId] = useState(frentes[0]?.id || 'F01');
+  const [frentesIds, setFrentesIds] = useState<string[]>([frentes[0]?.id || 'F01']);
   const [resultadoId, setResultadoId] = useState('');
   const [responsableId, setResponsableId] = useState(currentUser.id || 'P01');
   const [involucradosIds, setInvolucradosIds] = useState<string[]>([]);
@@ -89,7 +89,10 @@ export default function AgendaImpactoView({
   const filteredTemas = temas.filter(t => {
     if (filterHorizonte !== 'ALL' && t.horizonte_temporal !== filterHorizonte) return false;
     if (filterEstado !== 'ALL' && t.estado !== filterEstado) return false;
-    if (filterFrente !== 'ALL' && t.frente_id !== filterFrente) return false;
+    if (filterFrente !== 'ALL') {
+      const temaFrentes = t.frentes_ids || (t.frente_id ? [t.frente_id] : []);
+      if (!temaFrentes.includes(filterFrente)) return false;
+    }
     return true;
   });
 
@@ -117,7 +120,8 @@ export default function AgendaImpactoView({
             descripcion,
             horizonte_temporal: horizonte,
             fecha_limite: fechaLimite || null,
-            frente_id: frenteId,
+            frente_id: frentesIds[0] || 'F01',
+            frentes_ids: frentesIds.length > 0 ? frentesIds : ['F01'],
             resultado_id: resultadoId || null,
             responsable_id: responsableId,
             involucrados_ids: involucradosIds,
@@ -134,6 +138,7 @@ export default function AgendaImpactoView({
       setCreateModalOpen(false);
       setTitulo('');
       setDescripcion('');
+      setFrentesIds([frentes[0]?.id || 'F01']);
       showToast('⚡ Tema de Impacto creado e integrado a la agenda.');
       onRefresh();
     } catch (err: any) {
@@ -415,11 +420,21 @@ export default function AgendaImpactoView({
                         <span>{tema.horizonte_temporal}</span>
                       </span>
 
-                      {tema.frente_nombre && (
+                      {/* Badges de Procesos Principales */}
+                      {tema.frentes_ids && tema.frentes_ids.length > 0 ? (
+                        tema.frentes_ids.map(fId => {
+                          const fObj = frentes.find(f => f.id === fId);
+                          return (
+                            <span key={fId} className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold">
+                              {fId}{fObj ? `: ${fObj.nombre_corto}` : ''}
+                            </span>
+                          );
+                        })
+                      ) : tema.frente_nombre ? (
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold">
                           {tema.frente_id}: {tema.frente_nombre}
                         </span>
-                      )}
+                      ) : null}
 
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -590,7 +605,7 @@ export default function AgendaImpactoView({
                   >
                     <option value="30 días">30 días (Crítico)</option>
                     <option value="60 días">60 días</option>
-                    <option value="90 días">90 días (Trimestral)</option>
+                    <option value="90 días">90 días</option>
                     <option value="Fin de año">Antes de Fin de Año</option>
                     <option value="Personalizado">Fecha Personalizada</option>
                   </select>
@@ -607,22 +622,49 @@ export default function AgendaImpactoView({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Proceso Principal</label>
-                  <select
-                    value={frenteId}
-                    onChange={e => setFrenteId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 font-semibold"
-                  >
-                    {frentes.map(f => (
-                      <option key={f.id} value={f.id}>
-                        {f.id}: {f.nombre_corto}
-                      </option>
-                    ))}
-                  </select>
+              {/* Procesos Principales (Multiselección) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Procesos principales <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {frentesIds.length} seleccionado{frentesIds.length === 1 ? '' : 's'}
+                  </span>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl max-h-40 overflow-y-auto">
+                  {frentes.map(f => {
+                    const isSelected = frentesIds.includes(f.id);
+                    return (
+                      <button
+                        type="button"
+                        key={f.id}
+                        onClick={() => {
+                          if (isSelected) {
+                            if (frentesIds.length > 1) {
+                              setFrentesIds(frentesIds.filter(id => id !== f.id));
+                            }
+                          } else {
+                            setFrentesIds([...frentesIds, f.id]);
+                          }
+                        }}
+                        className={`text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-between border ${
+                          isSelected
+                            ? 'bg-[#191919] text-white border-[#191919] shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className="truncate pr-1">
+                          <strong className={isSelected ? 'text-[#FFAA34]' : 'text-slate-900 font-bold'}>{f.id}:</strong> {f.nombre_corto}
+                        </span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#FFAA34] shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Líder Responsable</label>
                   <select
@@ -635,6 +677,18 @@ export default function AgendaImpactoView({
                         {p.nombre} ({p.id})
                       </option>
                     ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Prioridad Inicial</label>
+                  <select
+                    value={prioridad}
+                    onChange={e => setPrioridad(e.target.value as any)}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 font-semibold"
+                  >
+                    <option value="P1">P1 — Máxima Urgencia</option>
+                    <option value="P2">P2 — Prioridad Normal</option>
                   </select>
                 </div>
               </div>
