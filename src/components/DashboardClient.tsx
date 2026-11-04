@@ -39,6 +39,8 @@ interface DashboardStats {
   sinOwnerClaro: number;
   enRiesgo: number;
   alertsTotal: number;
+  temasImpactoActivos?: number;
+  temasImpactoBloqueados?: number;
 }
 
 interface DashboardClientProps {
@@ -351,8 +353,39 @@ export default function DashboardClient({
         </div>
       )}
 
-      {/* Top 5 Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Top 6 Metric Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5">
+        {/* Desafíos Impact */}
+        <Link
+          href="/agenda?tipo=impacto"
+          className="p-3.5 rounded-xl bg-gradient-to-br from-[#191919] to-slate-900 border border-slate-800 hover:border-[#F6911E] text-white shadow-xs transition-all group col-span-2 md:col-span-1"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#FFAA34] uppercase tracking-wider flex items-center space-x-1">
+              <span>Impact</span>
+              <InfoTooltip
+                content="Temas urgentes con horizontes definidos (30, 60, 90 días o fin de año)"
+                size={12}
+              />
+            </span>
+            <Target className="w-4 h-4 text-[#F6911E] group-hover:scale-110 transition-transform" />
+          </div>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-2xl font-bold text-white">{currentStats.temasImpactoActivos ?? 0}</span>
+            <div className="flex items-center space-x-1">
+              {(currentStats.temasImpactoBloqueados ?? 0) > 0 ? (
+                <span className="text-[10px] text-rose-300 font-bold bg-rose-900/60 border border-rose-700/60 px-1.5 py-0.5 rounded">
+                  {currentStats.temasImpactoBloqueados} bloq.
+                </span>
+              ) : (
+                <span className="text-[10px] text-amber-300 font-semibold bg-[#F6911E]/20 px-1.5 py-0.5 rounded">
+                  Activos
+                </span>
+              )}
+            </div>
+          </div>
+        </Link>
+
         {/* Requiere decisión */}
         <Link
           href="/decisiones"

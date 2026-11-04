@@ -489,13 +489,22 @@ export function getDashboardStats() {
     SELECT COUNT(*) as c FROM resultados WHERE estado IN ('Atención', 'Crítico')
   `)?.c ?? 0;
 
+  let temasImpactoActivos = 0;
+  let temasImpactoBloqueados = 0;
+  try {
+    temasImpactoActivos = queryOne<{ c: number }>("SELECT COUNT(*) as c FROM temas_impacto WHERE estado != 'Resuelto'")?.c ?? 0;
+    temasImpactoBloqueados = queryOne<{ c: number }>("SELECT COUNT(*) as c FROM temas_impacto WHERE estado = 'Bloqueado'")?.c ?? 0;
+  } catch {}
+
   return {
     requiereDecision,
     requiereCoordinacion,
     porValidarTotal,
     sinOwnerClaro,
     enRiesgo,
-    alertsTotal: alerts.length
+    alertsTotal: alerts.length,
+    temasImpactoActivos,
+    temasImpactoBloqueados
   };
 }
 
