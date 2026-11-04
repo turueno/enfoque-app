@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser } from './UserContext';
-import { Persona, Frente, AgendaItem, ReunionMinuta, PriorityLevel } from '@/lib/types';
+import { Persona, Frente, AgendaItem, ReunionMinuta, PriorityLevel, TemaImpacto, Resultado } from '@/lib/types';
+import AgendaImpactoView from './AgendaImpactoView';
 import {
   Calendar,
   Users,
@@ -25,7 +26,8 @@ import {
   Sparkles,
   History,
   RotateCcw,
-  CheckCircle
+  CheckCircle,
+  Zap
 } from 'lucide-react';
 
 interface AgendaClientProps {
@@ -34,7 +36,7 @@ interface AgendaClientProps {
     items: AgendaItem[];
     stats: { p1: number; p2: number; p3: number; total: number; destacados: number };
   };
-  initialMode?: 'semanal' | 'bilateral' | 'proceso' | 'minutas';
+  initialMode?: 'semanal' | 'bilateral' | 'proceso' | 'minutas' | 'impacto';
   initialPersonaA?: string;
   initialPersonaB?: string;
   initialFrente?: string;
@@ -45,7 +47,9 @@ interface AgendaClientProps {
   };
   personas: Persona[];
   frentes: (Frente & { owner_nombre?: string | null })[];
+  resultados?: (Resultado & { frente_nombre: string; owner_nombre: string | null })[];
   initialMinutas: ReunionMinuta[];
+  initialTemasImpacto?: TemaImpacto[];
   textosMap?: Record<string, string>;
 }
 
@@ -58,7 +62,9 @@ export default function AgendaClient({
   initialSemanalData,
   personas,
   frentes,
+  resultados = [],
   initialMinutas,
+  initialTemasImpacto = [],
   textosMap = {}
 }: AgendaClientProps) {
   const effectiveInitial = initialData || initialSemanalData || {
@@ -69,8 +75,9 @@ export default function AgendaClient({
 
   const { currentUser } = useUser();
 
-  // Mode: semanal | bilateral | proceso | minutas
-  const [meetingMode, setMeetingMode] = useState<'semanal' | 'bilateral' | 'proceso' | 'minutas'>(initialMode);
+  // Mode: semanal | bilateral | proceso | minutas | impacto
+  const [meetingMode, setMeetingMode] = useState<'semanal' | 'bilateral' | 'proceso' | 'minutas' | 'impacto'>(initialMode);
+  const [temasImpacto, setTemasImpacto] = useState<TemaImpacto[]>(initialTemasImpacto);
 
   // Bilateral Selectors (Defaults: initial query params or currentUser and next persona)
   const defaultPersonaA = initialPersonaA || currentUser.id || personas[0]?.id || 'P01';
@@ -99,9 +106,22 @@ export default function AgendaClient({
   // In-meeting quick agreements recorded per item (item.id -> acuerdo string)
   const [agreements, setAgreements] = useState<Record<string, string>>({});
 
+  // Refresh Temas Impacto
+  const refreshTemasImpacto = async () => {
+    try {
+      const res = await fetch('/api/agenda/impacto');
+      const data = await res.json();
+      if (data.success) {
+        setTemasImpacto(data.temas || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Load agenda data when selectors change
   useEffect(() => {
-    if (meetingMode === 'minutas') return;
+    if (meetingMode === 'minutas' || meetingMode === 'impacto') return;
 
     let isMounted = true;
     const fetchData = async () => {
@@ -609,6 +629,18 @@ export default function AgendaClient({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2">
         <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto scrollbar-none">
           <button
+            onClick={() => setMeetingMode('impacto')}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              meetingMode === 'impacto'
+                ? 'bg-[#F6911E] text-[#191919] shadow-xs'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Zap className="w-4 h-4 fill-current text-[#191919]" />
+            <span>Impact ({temasImpacto.filter(t => t.estado !== 'Resuelto').length})</span>
+          </button>
+
+          <button
             onClick={() => setMeetingMode('semanal')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               meetingMode === 'semanal'
@@ -658,7 +690,7 @@ export default function AgendaClient({
         </div>
 
         {/* Global Meeting Actions */}
-        {meetingMode !== 'minutas' && (
+        {meetingMode !== 'minutas' && meetingMode !== 'impacto' && (
           <div className="flex items-center space-x-2">
             <Link
               href="/principios"
@@ -777,7 +809,7 @@ export default function AgendaClient({
       )}
 
       {/* METRIC STRIP & TIME ESTIMATE */}
-      {meetingMode !== 'minutas' && (
+      {meetingMode !== 'minutas' && meetingMode !== 'impacto' && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
             <span className="text-[11px] font-semibold text-slate-500">Temas en Agenda</span>
@@ -824,8 +856,20 @@ export default function AgendaClient({
         </div>
       )}
 
+      {/* IMPACTO VIEW */}
+      {meetingMode === 'impacto' && (
+        <AgendaImpactoView
+          temas={temasImpacto}
+          personas={personas}
+          frentes={frentes}
+          resultados={resultados}
+          currentUser={currentUser}
+          onRefresh={refreshTemasImpacto}
+        />
+      )}
+
       {/* AGENDA CONTENT: 3 PRIORITY BLOCKS */}
-      {meetingMode !== 'minutas' ? (
+      {meetingMode !== 'minutas' && meetingMode !== 'impacto' && (
         <div className="space-y-8">
           {loading && (
             <div className="py-8 text-center text-xs text-slate-400 font-editorial animate-pulse">
@@ -915,8 +959,10 @@ export default function AgendaClient({
             </div>
           )}
         </div>
-      ) : (
-        /* HISTÓRICO DE MINUTAS */
+      )}
+
+      {/* HISTÓRICO DE MINUTAS */}
+      {meetingMode === 'minutas' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-slate-500">

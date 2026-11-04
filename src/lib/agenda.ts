@@ -16,6 +16,7 @@ import {
   Persona,
   Frente
 } from './types';
+import { getTemasImpacto } from './impacto';
 
 /**
  * Returns current week cycle string, e.g. "2026-W38"
@@ -357,6 +358,38 @@ function getAllRawAgendaItems(): AgendaItem[] {
     });
   }
 
+  // 5. Temas de Impacto urgentes y activos
+  const temasImpacto = getTemasImpacto();
+  const temasActivos = temasImpacto.filter(t => t.estado !== 'Resuelto');
+  for (const t of temasActivos) {
+    const calcPrioridad: PriorityLevel = (t.prioridad === 'P1' || t.estado === 'Bloqueado' || t.horizonte_temporal === '30 días') ? 'P1' : 'P2';
+    const involucrados = [t.responsable_nombre, ...(t.involucrados_nombres || [])].filter(Boolean) as string[];
+
+    items.push({
+      id: `impacto-${t.id}`,
+      entidad_tipo: 'impacto',
+      entidad_id: t.id,
+      titulo: `⚡ Impacto (${t.horizonte_temporal}): ${t.titulo}`,
+      subtitulo: t.descripcion ? `${t.descripcion} — Responsable: ${t.responsable_nombre || 'Sin asignar'}` : `Responsable: ${t.responsable_nombre || 'Sin asignar'} | Estatus: ${t.estado}`,
+      prioridad_calculada: calcPrioridad,
+      prioridad_manual: null,
+      destacado_semana: false,
+      prioridad_efectiva: calcPrioridad,
+      estado: t.estado,
+      involucrados,
+      frente_nombre: t.frente_nombre || t.frente_id || undefined,
+      accion_sugerida: `Resolver iniciativa de impacto [Horizonte: ${t.horizonte_temporal}]`,
+      detalles: {
+        id: t.id,
+        horizonte: t.horizonte_temporal,
+        fecha_limite: t.fecha_limite,
+        responsable_id: t.responsable_id,
+        frente_id: t.frente_id,
+        estado: t.estado
+      }
+    });
+  }
+
   return items;
 }
 
@@ -463,7 +496,16 @@ export function getAgendaBilateral(
       if (aInvolucrado && bInvolucrado) return true;
     }
 
-    // 3. Coincidencia por nombres en involucrados
+    // 3. Coincidencia por nombres en involucrados o temas de impacto
+    if (item.entidad_tipo === 'impacto') {
+      const respId = item.detalles?.responsable_id;
+      const respMatch = respId === personaAId || respId === personaBId;
+      const invMatch =
+        item.involucrados.some(inv => inv.toLowerCase().includes(names[0])) ||
+        item.involucrados.some(inv => inv.toLowerCase().includes(names[1]));
+      if (respMatch || invMatch) return true;
+    }
+
     const hasA = item.involucrados.some(inv => inv.toLowerCase().includes(names[0]));
     const hasB = item.involucrados.some(inv => inv.toLowerCase().includes(names[1]));
     return hasA && hasB;

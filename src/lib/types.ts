@@ -211,7 +211,7 @@ export type PriorityLevel = 'P1' | 'P2' | 'P3';
 
 export interface PrioridadAgenda {
   id: string;
-  entidad_tipo: 'interfaz' | 'decision' | 'responsabilidad' | 'alerta' | 'principio' | 'frente';
+  entidad_tipo: 'interfaz' | 'decision' | 'responsabilidad' | 'alerta' | 'principio' | 'frente' | 'impacto';
   entidad_id: string;
   prioridad_manual: PriorityLevel | null;
   destacado_semana: number; // 0 or 1
@@ -233,9 +233,34 @@ export interface ReunionMinuta {
   created_by: string;
 }
 
+export interface TemaImpacto {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  horizonte_temporal: '30 días' | '60 días' | '90 días' | 'Fin de año' | 'Personalizado';
+  fecha_limite: string | null;
+  frente_id: string | null;
+  resultado_id: string | null;
+  responsable_id: string | null;
+  involucrados_ids_json: string; // JSON array of string IDs
+  estado: 'En curso' | 'Requiere Atención' | 'Bloqueado' | 'Resuelto';
+  prioridad: 'P1' | 'P2';
+  decisiones_generadas_ids_json: string; // JSON array of decision IDs
+  responsabilidades_generadas_ids_json: string; // JSON array of resp IDs
+  interfaces_generadas_ids_json: string; // JSON array of interface IDs
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  // Propiedades unidas/hidratadas opcionales
+  frente_nombre?: string;
+  responsable_nombre?: string;
+  resultado_titulo?: string;
+  involucrados_nombres?: string[];
+}
+
 export interface AgendaItem {
   id: string;
-  entidad_tipo: 'interfaz' | 'decision' | 'responsabilidad' | 'alerta' | 'principio' | 'owner';
+  entidad_tipo: 'interfaz' | 'decision' | 'responsabilidad' | 'alerta' | 'principio' | 'owner' | 'impacto';
   entidad_id: string;
   titulo: string;
   subtitulo: string;

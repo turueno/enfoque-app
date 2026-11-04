@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Decision, Frente, Persona } from '@/lib/types';
 import { useUser } from './UserContext';
-import { GitCommit, Filter, CheckCircle2, AlertTriangle, Plus, X, ChevronRight } from 'lucide-react';
+import { GitCommit, Filter, CheckCircle2, AlertTriangle, Plus, X, ChevronRight, ExternalLink } from 'lucide-react';
+import { DECISION_AIRTABLE_MAP } from '@/lib/airtableLinks';
 
 interface DecisionesClientProps {
   initialDecisiones: (Decision & { frente_nombre: string; decisor_nombre: string | null })[];
@@ -261,6 +262,21 @@ export default function DecisionesClient({
                     <div>
                       <span className="text-slate-500 font-semibold block mb-0.5">Momento / Disparador:</span>
                       <p className="text-slate-800 text-xs leading-relaxed">{d.momento_trigger}</p>
+                    </div>
+                  )}
+
+                  {DECISION_AIRTABLE_MAP[d.id] && (
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500 font-medium">Panel Operativo:</span>
+                      <a
+                        href={DECISION_AIRTABLE_MAP[d.id].url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80 transition-colors"
+                      >
+                        <span>{DECISION_AIRTABLE_MAP[d.id].accionTexto}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                   )}
                 </div>

@@ -880,6 +880,33 @@ function initTelemetriaTable(db: DatabaseSync) {
   `);
 }
 
+function initTemasImpactoTable(db: DatabaseSync) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS temas_impacto (
+      id TEXT PRIMARY KEY,
+      titulo TEXT NOT NULL,
+      descripcion TEXT,
+      horizonte_temporal TEXT NOT NULL,
+      fecha_limite TEXT,
+      frente_id TEXT,
+      resultado_id TEXT,
+      responsable_id TEXT,
+      involucrados_ids_json TEXT DEFAULT '[]',
+      estado TEXT NOT NULL DEFAULT 'En curso',
+      prioridad TEXT NOT NULL DEFAULT 'P1',
+      decisiones_generadas_ids_json TEXT DEFAULT '[]',
+      responsabilidades_generadas_ids_json TEXT DEFAULT '[]',
+      interfaces_generadas_ids_json TEXT DEFAULT '[]',
+      created_at TEXT NOT NULL,
+      created_by TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_temas_impacto_frente ON temas_impacto(frente_id);
+    CREATE INDEX IF NOT EXISTS idx_temas_impacto_responsable ON temas_impacto(responsable_id);
+    CREATE INDEX IF NOT EXISTS idx_temas_impacto_estado ON temas_impacto(estado);
+  `);
+}
+
 export function getDb(): DatabaseSync {
   if (!dbInstance) {
     if (!fs.existsSync(DATA_DIR)) {
@@ -943,6 +970,7 @@ export function getDb(): DatabaseSync {
     initPrioridadesTable(dbInstance);
     initReunionesTable(dbInstance);
     initTelemetriaTable(dbInstance);
+    initTemasImpactoTable(dbInstance);
   }
   return dbInstance;
 }

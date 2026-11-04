@@ -5,7 +5,8 @@ import {
   getAgendaProceso,
   getMinutasReuniones
 } from '@/lib/agenda';
-import { getAllPersonas, getAllFrentes } from '@/lib/queries';
+import { getTemasImpacto } from '@/lib/impacto';
+import { getAllPersonas, getAllFrentes, getAllResultados } from '@/lib/queries';
 import { getTextosSistemaMap } from '@/lib/db';
 import AgendaClient from '@/components/AgendaClient';
 
@@ -17,14 +18,16 @@ export default async function AgendaPage({
   searchParams?: Promise<{ tipo?: string; personaA?: string; personaB?: string; frente?: string }>;
 }) {
   const params = searchParams ? await searchParams : {};
-  const initialMode = (params.tipo as 'semanal' | 'bilateral' | 'proceso' | 'minutas') || 'semanal';
+  const initialMode = (params.tipo as 'semanal' | 'bilateral' | 'proceso' | 'minutas' | 'impacto') || 'semanal';
   const initialPersonaA = params.personaA || '';
   const initialPersonaB = params.personaB || '';
   const initialFrente = params.frente || '';
 
   const personas = getAllPersonas();
   const frentes = getAllFrentes();
+  const resultados = getAllResultados();
   const minutas = getMinutasReuniones();
+  const temasImpacto = getTemasImpacto();
   const textosMap = getTextosSistemaMap();
 
   let initialData: any;
@@ -46,7 +49,9 @@ export default async function AgendaPage({
         initialFrente={initialFrente}
         personas={personas}
         frentes={frentes}
+        resultados={resultados}
         initialMinutas={minutas}
+        initialTemasImpacto={temasImpacto}
         textosMap={textosMap}
       />
     </div>
