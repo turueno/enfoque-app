@@ -53,6 +53,8 @@ export default function InterfacesClient({
   const [newEntrega, setNewEntrega] = useState('');
   const [newDevuelve, setNewDevuelve] = useState('');
   const [newFrentes, setNewFrentes] = useState(frentes[0]?.id || 'F01');
+  const [savingNew, setSavingNew] = useState(false);
+  const [newErrorMsg, setNewErrorMsg] = useState<string | null>(null);
 
   // Filtered interfaces
   const filtered = useMemo(() => {
@@ -126,6 +128,80 @@ export default function InterfacesClient({
     }
   };
 
+  const handleCreateInterface = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEntrega.trim()) {
+      setNewErrorMsg('El entregable / input es obligatorio.');
+      return;
+    }
+    if (newDeId === newHaciaId) {
+      setNewErrorMsg('La persona que entrega y la que recibe deben ser distintas.');
+      return;
+    }
+
+    setSavingNew(true);
+    setNewErrorMsg(null);
+
+    const deObj = personas.find(p => p.id === newDeId);
+    const haciaObj = personas.find(p => p.id === newHaciaId);
+
+    try {
+      const res = await fetch('/api/entities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'interfaz',
+          usuario: currentUser.nombre,
+          data: {
+            de_id: newDeId,
+            de_nombre: deObj?.nombre || newDeId,
+            hacia_id: newHaciaId,
+            hacia_nombre: haciaObj?.nombre || newHaciaId,
+            entrega: newEntrega.trim(),
+            devuelve: newDevuelve.trim() || null,
+            frentes: newFrentes,
+            estado_validacion: 'POR VALIDAR',
+            estado: newDevuelve.trim() ? 'Operativa' : 'Por definir'
+          }
+        })
+      });
+
+      const resJson = await res.json();
+      if (!res.ok || !resJson.success) {
+        throw new Error(resJson.error || 'Error al registrar relación');
+      }
+
+      const nuevaInt: Interfaz = {
+        id: resJson.id,
+        de_persona_id: newDeId,
+        de_persona_nombre: deObj?.nombre || newDeId,
+        hacia_persona_id: newHaciaId,
+        hacia_persona_nombre: haciaObj?.nombre || newHaciaId,
+        entrega_input: newEntrega.trim(),
+        devuelve_output: newDevuelve.trim() || null,
+        frentes_relacionados: newFrentes,
+        frecuencia: null,
+        condicion_activacion: null,
+        problema_actual: null,
+        estado: newDevuelve.trim() ? 'Operativa' : 'Por definir',
+        estado_definicion: 'Definido',
+        estado_validacion: 'POR VALIDAR',
+        validado_por: null,
+        fecha_validacion: null,
+        comentario_validacion: null
+      };
+
+      setInterfaces(prev => [nuevaInt, ...prev]);
+      setShowNewModal(false);
+      setNewEntrega('');
+      setNewDevuelve('');
+    } catch (err: any) {
+      setNewErrorMsg(err.message || 'Error al guardar la relación');
+    } finally {
+      setSavingNew(false);
+    }
+  };
+
   // Node positions for Circular Directed Graph
   const graphNodes = useMemo(() => {
     const total = personas.length;
@@ -188,6 +264,17 @@ export default function InterfacesClient({
 
         {/* Right: View toggle & New button */}
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => {
+              setNewErrorMsg(null);
+              setShowNewModal(true);
+            }}
+            className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#191919] hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs"
+          >
+            <Plus className="w-4 h-4 text-[#F6911E]" />
+            <span>Nueva Relación</span>
+          </button>
+
           <div className="inline-flex bg-slate-100 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('graph')}
@@ -551,6 +638,134 @@ export default function InterfacesClient({
                 {saving ? 'Guardando...' : 'Guardar Interfaz Validada'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Nueva Relación / Interfaz */}
+      {showNewModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="p-1.5 bg-[#191919] text-[#F6911E] rounded-lg">
+                  <ArrowLeftRight className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">Nueva Relación / Interfaz</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {newErrorMsg && (
+              <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+                {newErrorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateInterface} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Persona que Entrega (De) <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={newDeId}
+                    onChange={e => setNewDeId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 font-semibold"
+                  >
+                    {personas.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.nombre} ({p.id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Persona que Recibe (Hacia) <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={newHaciaId}
+                    onChange={e => setNewHaciaId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 font-semibold"
+                  >
+                    {personas.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.nombre} ({p.id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Proceso Principal Vinculado <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={newFrentes}
+                  onChange={e => setNewFrentes(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 font-semibold"
+                >
+                  {frentes.map(f => (
+                    <option key={f.id} value={f.id}>
+                      {f.id}: {f.nombre_corto}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Entregable / Input <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="Qué entrega formalmente la primera persona a la segunda..."
+                  value={newEntrega}
+                  onChange={e => setNewEntrega(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#F6911E] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Output de Retorno / Devolución Requerida (Opcional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Qué devuelve o confirma la segunda persona para cerrar el ciclo..."
+                  value={newDevuelve}
+                  onChange={e => setNewDevuelve(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#F6911E] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowNewModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingNew}
+                  className="px-4 py-2 rounded-xl bg-[#191919] hover:bg-[#F6911E] hover:text-[#191919] text-white font-bold transition-all disabled:opacity-50"
+                >
+                  {savingNew ? 'Guardando...' : 'Registrar Relación'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

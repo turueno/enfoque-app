@@ -10,9 +10,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { tipo, data, usuario = 'Colaborador' } = body;
 
-    // La creación de decisiones desde la vista general de Decisiones está abierta a todos los colaboradores
-    // Para el resto de entidades estructurales creadas desde /admin, se requiere sesión de administrador
-    if (tipo !== 'decision') {
+    // La creación de decisiones, responsabilidades e interfaces está abierta a todos los colaboradores
+    // Para el resto de entidades estructurales creadas desde /admin (personas, frentes, principios, resultados), se requiere sesión de administrador
+    if (tipo !== 'decision' && tipo !== 'responsabilidad' && tipo !== 'interfaz') {
       const isAuth = await isAdminAuthenticated();
       if (!isAuth) {
         return NextResponse.json({ error: 'Acceso denegado: se requiere sesión activa de administrador.' }, { status: 401 });
@@ -66,12 +66,42 @@ export async function POST(req: Request) {
     }
 
     if (tipo === 'responsabilidad') {
-      const id = data.id?.trim() || `R${String(Date.now()).slice(-4)}`;
+      let id = data.id?.trim();
+      if (!id) {
+        const rows = db.prepare('SELECT id FROM responsabilidades').all() as { id: string }[];
+        const maxNum = rows.reduce((max, r) => {
+          const match = r.id.match(/^R(\d+)$/);
+          return match ? Math.max(max, parseInt(match[1], 10)) : max;
+        }, 0);
+        const nextNum = maxNum > 0 ? maxNum + 1 : rows.length + 1;
+        id = `R${nextNum < 10 ? '00' : nextNum < 100 ? '0' : ''}${nextNum}`;
+      }
+
+      const rol = data.rol || data.rol_propuesto || 'Ejecuta';
+      const estadoValidacion = data.estado_validacion || 'POR VALIDAR';
+      const celdaOrigen = data.celda_origen || 'Ingreso manual';
+      const comentario = data.comentario || data.comentario_propuesta || null;
+
       db.prepare(`
-        INSERT INTO responsabilidades (id, frente_id, persona_id, responsabilidad_original, rol_propuesto, rol_validado, estado_revision, estado_validacion)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, data.frente_id, data.persona_id, data.responsabilidad, data.rol || 'Ejecuta', data.rol || 'Ejecuta', 'Validado', 'DEFINIDO');
-      logAudit(usuario, 'responsabilidad', id, 'creacion', null, data.responsabilidad, 'Creación desde panel administrativo');
+        INSERT INTO responsabilidades (
+          id, frente_id, persona_id, responsabilidad_original,
+          rol_propuesto, rol_validado, estado_revision, celda_origen,
+          estado_validacion, comentario_propuesta, comentario_validacion
+        ) VALUES (?, ?, ?, ?, ?, ?, 'Propuesto por colaborador', ?, ?, ?, ?)
+      `).run(
+        id,
+        data.frente_id,
+        data.persona_id,
+        data.responsabilidad.trim(),
+        rol,
+        estadoValidacion === 'APROBADO' ? rol : null,
+        celdaOrigen,
+        estadoValidacion,
+        comentario,
+        estadoValidacion === 'APROBADO' ? (comentario || 'Aprobado al registrar') : null
+      );
+
+      logAudit(usuario, 'responsabilidad', id, 'creacion', null, data.responsabilidad.trim(), `Responsabilidad registrada por ${usuario}`);
       return NextResponse.json({ success: true, id });
     }
 
@@ -95,12 +125,52 @@ export async function POST(req: Request) {
     }
 
     if (tipo === 'interfaz') {
-      const id = data.id?.trim() || `I${String(Date.now()).slice(-2)}`;
+      let id = data.id?.trim();
+      if (!id) {
+        const rows = db.prepare('SELECT id FROM interfaces').all() as { id: string }[];
+        const maxNum = rows.reduce((max, r) => {
+          const match = r.id.match(/^I(\d+)$/);
+          return match ? Math.max(max, parseInt(match[1], 10)) : max;
+        }, 0);
+        const nextNum = maxNum > 0 ? maxNum + 1 : rows.length + 1;
+        id = `I${nextNum < 10 ? '0' : ''}${nextNum}`;
+      }
+
+      // Buscar nombres de personas si no vienen dados
+      let deNombre = data.de_nombre;
+      let haciaNombre = data.hacia_nombre;
+      if (!deNombre && data.de_id) {
+        const p = queryOne<{ nombre: string }>('SELECT nombre FROM personas WHERE id = ?', data.de_id);
+        deNombre = p?.nombre || data.de_id;
+      }
+      if (!haciaNombre && data.hacia_id) {
+        const p = queryOne<{ nombre: string }>('SELECT nombre FROM personas WHERE id = ?', data.hacia_id);
+        haciaNombre = p?.nombre || data.hacia_id;
+      }
+
+      const frentesRel = Array.isArray(data.frentes) ? data.frentes.join(',') : (data.frentes || 'F01');
+      const estadoValidacion = data.estado_validacion || 'POR VALIDAR';
+      const estadoOperativo = data.estado || (data.devuelve ? 'Operativa' : 'Por definir');
+
       db.prepare(`
-        INSERT INTO interfaces (id, de_persona_id, de_persona_nombre, hacia_persona_id, hacia_persona_nombre, entrega_input, devuelve_output, frentes_relacionados, estado_definicion, estado, estado_validacion)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, data.de_id || null, data.de_nombre, data.hacia_id || null, data.hacia_nombre, data.entrega, data.devuelve || null, data.frentes || null, 'Definido', 'Operativa', 'DEFINIDO');
-      logAudit(usuario, 'interfaz', id, 'creacion', null, `${data.de_nombre} -> ${data.hacia_nombre}`, 'Creación desde panel administrativo');
+        INSERT INTO interfaces (
+          id, de_persona_id, de_persona_nombre, hacia_persona_id, hacia_persona_nombre,
+          entrega_input, devuelve_output, frentes_relacionados, estado_definicion, estado, estado_validacion
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Definido', ?, ?)
+      `).run(
+        id,
+        data.de_id || null,
+        deNombre || 'Colaborador A',
+        data.hacia_id || null,
+        haciaNombre || 'Colaborador B',
+        data.entrega.trim(),
+        data.devuelve?.trim() || null,
+        frentesRel,
+        estadoOperativo,
+        estadoValidacion
+      );
+
+      logAudit(usuario, 'interfaz', id, 'creacion', null, `${deNombre} ➔ ${haciaNombre}`, `Relación registrada por ${usuario}`);
       return NextResponse.json({ success: true, id });
     }
 
