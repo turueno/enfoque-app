@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Compass,
   Target,
+  Zap,
   X,
   Save,
   CheckCircle,
@@ -19,7 +20,7 @@ import {
   UserCheck,
   UserX
 } from 'lucide-react';
-import { Frente, Persona, Decision, Interfaz, Responsabilidad, Principio, Resultado } from '@/lib/types';
+import { Frente, Persona, Decision, Interfaz, Responsabilidad, Principio, Resultado, TemaImpacto } from '@/lib/types';
 import { TextoSistema } from '@/lib/db';
 import { useUser } from '@/components/UserContext';
 import { isUserAdmin } from '@/lib/auth';
@@ -32,6 +33,7 @@ interface AdminEntitiesClientProps {
   initialResponsabilidades: (Responsabilidad & { frente_nombre: string; persona_nombre: string })[];
   initialPrincipios: Principio[];
   initialResultados?: (Resultado & { frente_nombre: string; owner_nombre: string | null })[];
+  initialTemasImpacto?: TemaImpacto[];
   textos?: TextoSistema[];
 }
 
@@ -43,6 +45,7 @@ export default function AdminEntitiesClient({
   initialResponsabilidades,
   initialPrincipios,
   initialResultados = [],
+  initialTemasImpacto = [],
   textos = []
 }: AdminEntitiesClientProps) {
   const { currentUser } = useUser();
@@ -53,7 +56,7 @@ export default function AdminEntitiesClient({
     return found ? found.valor : defaultVal;
   };
 
-  const [activeTab, setActiveTab] = useState<'procesos' | 'personas' | 'resultados' | 'decisiones' | 'interfaces' | 'responsabilidades' | 'principios'>('procesos');
+  const [activeTab, setActiveTab] = useState<'procesos' | 'personas' | 'resultados' | 'decisiones' | 'interfaces' | 'responsabilidades' | 'principios' | 'impacto'>('procesos');
 
   // Local state
   const [frentes, setFrentes] = useState(initialFrentes);
@@ -63,6 +66,7 @@ export default function AdminEntitiesClient({
   const [interfaces, setInterfaces] = useState(initialInterfaces);
   const [responsabilidades, setResponsabilidades] = useState(initialResponsabilidades);
   const [principios, setPrincipios] = useState(initialPrincipios);
+  const [temasImpacto, setTemasImpacto] = useState<TemaImpacto[]>(initialTemasImpacto);
 
   // Search & Filters for responsabilidades
   const [respSearch, setRespSearch] = useState('');
@@ -183,6 +187,19 @@ export default function AdminEntitiesClient({
         donde_aplica: 'Todos los frentes',
         estado: 'Por desarrollar'
       });
+    } else if (type === 'impacto') {
+      const defaultId = `IMP-${Date.now().toString().slice(-6)}`;
+      setFormData({
+        id: defaultId,
+        titulo: '',
+        descripcion: '',
+        horizonte_temporal: '30 días',
+        prioridad: 'P1',
+        estado: 'En curso',
+        frente_id: frentes[0]?.id || 'F01',
+        responsable_id: personas[0]?.id || '',
+        fecha_limite: ''
+      });
     }
   };
 
@@ -257,6 +274,18 @@ export default function AdminEntitiesClient({
         interpretacion_propuesta: item.interpretacion_propuesta || '',
         donde_aplica: item.donde_aplica || 'Todos los frentes',
         estado: item.estado || 'Por desarrollar'
+      });
+    } else if (type === 'impacto') {
+      setFormData({
+        id: item.id,
+        titulo: item.titulo,
+        descripcion: item.descripcion || '',
+        horizonte_temporal: item.horizonte_temporal || '30 días',
+        prioridad: item.prioridad || 'P1',
+        estado: item.estado || 'En curso',
+        frente_id: item.frente_id || (item.frentes_ids && item.frentes_ids[0]) || frentes[0]?.id || 'F01',
+        responsable_id: item.responsable_id || personas[0]?.id || '',
+        fecha_limite: item.fecha_limite || ''
       });
     }
   };
@@ -458,6 +487,30 @@ export default function AdminEntitiesClient({
               estado: formData.estado || 'Por desarrollar'
             }
           ]);
+        } else if (modalType === 'impacto') {
+          const f = frentes.find(item => item.id === formData.frente_id);
+          const p = personas.find(item => item.id === formData.responsable_id);
+          setTemasImpacto(prev => [
+            {
+              id: resData.id || formData.id,
+              titulo: formData.titulo,
+              descripcion: formData.descripcion || null,
+              horizonte_temporal: formData.horizonte_temporal || '30 días',
+              prioridad: formData.prioridad || 'P1',
+              estado: formData.estado || 'En curso',
+              frente_id: formData.frente_id,
+              frentes_ids: formData.frente_id ? [formData.frente_id] : [],
+              frente_nombre: f?.nombre_corto || formData.frente_id,
+              responsable_id: formData.responsable_id || null,
+              responsable_nombre: p?.nombre || undefined,
+              fecha_limite: formData.fecha_limite || null,
+              resultado_id: null,
+              created_at: new Date().toISOString(),
+              created_by: currentUser.nombre,
+              updated_at: new Date().toISOString()
+            } as any,
+            ...prev
+          ]);
         }
 
         closeModal();
@@ -615,6 +668,30 @@ export default function AdminEntitiesClient({
                 : pr
             )
           );
+        } else if (modalType === 'impacto') {
+          const f = frentes.find(item => item.id === formData.frente_id);
+          const p = personas.find(item => item.id === formData.responsable_id);
+          setTemasImpacto(prev =>
+            prev.map(imp =>
+              imp.id === currentEntity.id
+                ? {
+                    ...imp,
+                    titulo: formData.titulo,
+                    descripcion: formData.descripcion || null,
+                    horizonte_temporal: formData.horizonte_temporal || '30 días',
+                    prioridad: formData.prioridad || 'P1',
+                    estado: formData.estado || 'En curso',
+                    frente_id: formData.frente_id,
+                    frentes_ids: formData.frente_id ? [formData.frente_id] : [],
+                    frente_nombre: f?.nombre_corto || imp.frente_nombre,
+                    responsable_id: formData.responsable_id || null,
+                    responsable_nombre: p?.nombre || imp.responsable_nombre,
+                    fecha_limite: formData.fecha_limite || null,
+                    updated_at: new Date().toISOString()
+                  }
+                : imp
+            )
+          );
         }
 
         closeModal();
@@ -660,6 +737,8 @@ export default function AdminEntitiesClient({
         setResponsabilidades(prev => prev.filter(r => r.id !== id));
       } else if (type === 'principio') {
         setPrincipios(prev => prev.filter(pr => pr.id !== id));
+      } else if (type === 'impacto' || type === 'tema_impacto') {
+        setTemasImpacto(prev => prev.filter(imp => imp.id !== id));
       }
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -764,6 +843,18 @@ export default function AdminEntitiesClient({
         >
           <Compass className="w-4 h-4 text-[#F6911E]" />
           <span>{getText('admin.entidades.subtab.principios', 'Principios Transversales')} ({principios.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('impacto')}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all ${
+            activeTab === 'impacto'
+              ? 'bg-[#191919] text-white shadow-xs font-bold'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          <Zap className="w-4 h-4 text-[#F6911E]" />
+          <span>{getText('admin.entidades.subtab.impacto', 'Temas de Impacto')} ({temasImpacto.length})</span>
         </button>
       </div>
 
@@ -1387,6 +1478,118 @@ export default function AdminEntitiesClient({
         </div>
       )}
 
+      {/* 8. TEMAS DE IMPACTO */}
+      {activeTab === 'impacto' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                <Zap className="w-4 h-4 text-[#F6911E]" />
+                <span>{getText('admin.entidades.impacto.titulo', 'Catálogo de Temas de Impacto')}</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                {getText('admin.entidades.impacto.desc', 'Iniciativas y focos operativos estratégicos mostrados en la sección de Impacto.')}
+              </p>
+            </div>
+            <button
+              onClick={() => openCreateModal('impacto')}
+              disabled={!isAdmin}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[#191919] hover:bg-[#2b2b2b] text-white text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors self-start sm:self-auto"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#F6911E]" />
+              <span>{getText('admin.entidades.impacto.nuevo', 'Nuevo Tema de Impacto')}</span>
+            </button>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse min-w-[700px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
+                <tr>
+                  <th className="py-3 px-3 w-16">ID</th>
+                  <th className="py-3 px-3">Título y Alcance</th>
+                  <th className="py-3 px-3 w-32">Macroproceso</th>
+                  <th className="py-3 px-3 w-28">Responsable</th>
+                  <th className="py-3 px-3 w-24">Horizonte</th>
+                  <th className="py-3 px-3 w-20">Prioridad</th>
+                  <th className="py-3 px-3 w-24">Estado</th>
+                  <th className="py-3 px-3 text-right w-28">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {temasImpacto.map(imp => (
+                  <tr key={imp.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3 px-3 font-mono font-bold text-slate-500 text-[11px] align-top">
+                      {imp.id.length > 12 ? `${imp.id.slice(0, 10)}...` : imp.id}
+                    </td>
+                    <td className="py-3 px-3 align-top">
+                      <div className="font-bold text-slate-900">{imp.titulo}</div>
+                      {imp.descripcion && (
+                        <div className="text-slate-500 text-[11px] mt-0.5 line-clamp-2">
+                          {imp.descripcion}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 align-top text-slate-700 font-medium">
+                      {imp.frente_nombre || imp.frente_id || '—'}
+                    </td>
+                    <td className="py-3 px-3 align-top text-slate-700">
+                      {imp.responsable_nombre || '—'}
+                    </td>
+                    <td className="py-3 px-3 align-top font-medium text-slate-600">
+                      {imp.horizonte_temporal}
+                    </td>
+                    <td className="py-3 px-3 align-top">
+                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                        imp.prioridad === 'P1'
+                          ? 'bg-rose-100 text-rose-800'
+                          : imp.prioridad === 'P2'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {imp.prioridad || 'P1'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 align-top">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        imp.estado === 'Bloqueado'
+                          ? 'bg-rose-100 text-rose-800'
+                          : imp.estado === 'Requiere Atención'
+                          ? 'bg-amber-100 text-amber-800'
+                          : imp.estado === 'Resuelto' || imp.estado === 'Cerrado'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {imp.estado}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right align-top space-x-1">
+                      <button
+                        onClick={() => openEditModal('impacto', imp)}
+                        disabled={!isAdmin}
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] disabled:opacity-50 transition-colors"
+                        title="Editar tema"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Editar</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEntity('impacto', imp.id, imp.titulo)}
+                        disabled={!isAdmin}
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-[11px] disabled:opacity-50 transition-colors"
+                        title="Eliminar tema"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Eliminar</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* MODAL DIALOG */}
       {modalType && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -1406,6 +1609,8 @@ export default function AdminEntitiesClient({
                   ? getText('admin.entidades.subtab.interfaces', 'Interfaz')
                   : modalType === 'responsabilidad'
                   ? getText('admin.entidades.subtab.responsabilidades', 'Responsabilidad')
+                  : modalType === 'impacto'
+                  ? getText('admin.entidades.subtab.impacto', 'Tema de Impacto')
                   : getText('admin.entidades.subtab.principios', 'Principio Transversal')}
               </h2>
               <button onClick={closeModal} className="text-slate-400 hover:text-slate-700">
@@ -1991,6 +2196,126 @@ export default function AdminEntitiesClient({
                         <option value="Activo">Activo</option>
                         <option value="En revisión">En revisión</option>
                         <option value="Consolidado">Consolidado</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* TEMA DE IMPACTO FORM */}
+              {modalType === 'impacto' && (
+                <>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">ID del Tema de Impacto:</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={formData.id || ''}
+                      className="w-full p-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-mono text-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">Título del Tema:</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.titulo || ''}
+                      onChange={e => setFormData({ ...formData, titulo: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                      placeholder="Ej: Despliegue de nuevo motor de inventario en bodega central"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">Descripción / Alcance:</label>
+                    <textarea
+                      rows={3}
+                      value={formData.descripcion || ''}
+                      onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      placeholder="Describe el reto, contexto operativo, riesgos o meta..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Horizonte Temporal:</label>
+                      <select
+                        value={formData.horizonte_temporal || '30 días'}
+                        onChange={e => setFormData({ ...formData, horizonte_temporal: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                      >
+                        <option value="30 días">30 días</option>
+                        <option value="60 días">60 días</option>
+                        <option value="90 días">90 días</option>
+                        <option value="Fin de año">Fin de año</option>
+                        <option value="Personalizado">Personalizado</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Prioridad:</label>
+                      <select
+                        value={formData.prioridad || 'P1'}
+                        onChange={e => setFormData({ ...formData, prioridad: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                      >
+                        <option value="P1">P1 - Crítico / Inmediato</option>
+                        <option value="P2">P2 - Alto Valor / Secundario</option>
+                        <option value="P3">P3 - Mediano Plazo</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Estado Operativo:</label>
+                      <select
+                        value={formData.estado || 'En curso'}
+                        onChange={e => setFormData({ ...formData, estado: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                      >
+                        <option value="En curso">En curso</option>
+                        <option value="Requiere Atención">Requiere Atención</option>
+                        <option value="Bloqueado">Bloqueado</option>
+                        <option value="Resuelto">Resuelto</option>
+                        <option value="Cerrado">Cerrado</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Fecha Límite (Opcional):</label>
+                      <input
+                        type="date"
+                        value={formData.fecha_limite || ''}
+                        onChange={e => setFormData({ ...formData, fecha_limite: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Macroproceso Principal:</label>
+                      <select
+                        value={formData.frente_id || ''}
+                        onChange={e => setFormData({ ...formData, frente_id: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                      >
+                        {frentes.map(f => (
+                          <option key={f.id} value={f.id}>
+                            {f.id}: {f.nombre_corto}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1">Responsable Principal:</label>
+                      <select
+                        value={formData.responsable_id || ''}
+                        onChange={e => setFormData({ ...formData, responsable_id: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                      >
+                        <option value="">Sin asignar</option>
+                        {personas.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre} ({p.id})
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

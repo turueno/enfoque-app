@@ -8,6 +8,7 @@ import {
   getAllPrincipios,
   getAllResultados
 } from '@/lib/queries';
+import { getTemasImpacto } from '@/lib/impacto';
 import AdminTabsClient from '@/components/AdminTabsClient';
 import AdminLoginForm from '@/components/AdminLoginForm';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
@@ -28,6 +29,7 @@ export default async function AdminPage() {
   const responsabilidades = getAllResponsabilidades() as any;
   const principios = getAllPrincipios();
   const resultados = getAllResultados();
+  const temasImpacto = getTemasImpacto();
 
   return (
     <div className="py-2">
@@ -40,6 +42,7 @@ export default async function AdminPage() {
         initialResponsabilidades={responsabilidades}
         initialPrincipios={principios}
         initialResultados={resultados}
+        initialTemasImpacto={temasImpacto}
       />
     </div>
   );

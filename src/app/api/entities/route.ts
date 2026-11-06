@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb, logAudit, queryOne } from '@/lib/db';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
+import { createTemaImpacto, updateTemaImpacto } from '@/lib/impacto';
 
 /**
  * Creates a new organizational entity
@@ -10,8 +11,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { tipo, data, usuario = 'Colaborador' } = body;
 
-    // La creación de decisiones, responsabilidades e interfaces está abierta a todos los colaboradores
-    // Para el resto de entidades estructurales creadas desde /admin (personas, frentes, principios, resultados), se requiere sesión de administrador
+    // Para el resto de entidades estructurales creadas desde /admin (personas, frentes, principios, resultados, temas_impacto), se requiere sesión de administrador
     if (tipo !== 'decision' && tipo !== 'responsabilidad' && tipo !== 'interfaz') {
       const isAuth = await isAdminAuthenticated();
       if (!isAuth) {
@@ -20,6 +20,22 @@ export async function POST(req: Request) {
     }
 
     const db = getDb();
+
+    if (tipo === 'tema_impacto' || tipo === 'impacto') {
+      const created = createTemaImpacto({
+        titulo: data.titulo,
+        descripcion: data.descripcion || null,
+        horizonte_temporal: data.horizonte_temporal || '30 días',
+        fecha_limite: data.fecha_limite || null,
+        frente_id: data.frente_id || null,
+        frentes_ids: data.frentes_ids || (data.frente_id ? [data.frente_id] : []),
+        resultado_id: data.resultado_id || null,
+        responsable_id: data.responsable_id || null,
+        prioridad: data.prioridad || 'P1',
+        usuario
+      });
+      return NextResponse.json({ success: true, id: created.id, item: created });
+    }
 
     if (tipo === 'persona') {
       const id = data.id?.trim() || `P${String(Date.now()).slice(-3)}`;
@@ -381,6 +397,41 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: true });
     }
 
+    if (tipo === 'tema_impacto' || tipo === 'impacto') {
+      const current = queryOne<Record<string, unknown>>('SELECT * FROM temas_impacto WHERE id = ?', id);
+      if (!current) return NextResponse.json({ error: 'Tema de impacto no encontrado' }, { status: 404 });
+
+      const frentesList = data.frentes_ids && data.frentes_ids.length > 0
+        ? data.frentes_ids
+        : (data.frente_id ? [data.frente_id] : []);
+      const frentesJson = JSON.stringify(frentesList);
+      const primaryFrenteId = frentesList[0] || data.frente_id || null;
+
+      db.prepare(`
+        UPDATE temas_impacto
+        SET titulo = ?, descripcion = ?, horizonte_temporal = ?, fecha_limite = ?,
+            frente_id = ?, frentes_ids_json = ?, resultado_id = ?, responsable_id = ?,
+            estado = ?, prioridad = ?, updated_at = ?
+        WHERE id = ?
+      `).run(
+        data.titulo?.trim(),
+        data.descripcion ? data.descripcion.trim() : null,
+        data.horizonte_temporal || '30 días',
+        data.fecha_limite || null,
+        primaryFrenteId,
+        frentesJson,
+        data.resultado_id || null,
+        data.responsable_id || null,
+        data.estado || 'En curso',
+        data.prioridad || 'P1',
+        new Date().toISOString(),
+        id
+      );
+
+      logAudit(usuario, 'tema_impacto', id, 'edicion_integral', String(current.titulo), data.titulo, 'Actualización desde panel administrativo');
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: 'Tipo desconocido' }, { status: 400 });
   } catch (error: unknown) {
     console.error('Error en PUT /api/entities:', error);
@@ -444,6 +495,12 @@ export async function DELETE(req: Request) {
       db.prepare('DELETE FROM frente_principios WHERE principio_id = ?').run(id);
       db.prepare('DELETE FROM principios WHERE id = ?').run(id);
       logAudit(usuario, 'principio', id, 'eliminacion', id, null, 'Eliminación desde panel administrativo');
+      return NextResponse.json({ success: true });
+    }
+
+    if (tipo === 'tema_impacto' || tipo === 'impacto') {
+      db.prepare('DELETE FROM temas_impacto WHERE id = ?').run(id);
+      logAudit(usuario, 'tema_impacto', id, 'eliminacion', id, null, 'Eliminación desde panel administrativo');
       return NextResponse.json({ success: true });
     }
 

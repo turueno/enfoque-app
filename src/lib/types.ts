@@ -244,8 +244,8 @@ export interface TemaImpacto {
   resultado_id: string | null;
   responsable_id: string | null;
   involucrados_ids_json: string; // JSON array of string IDs
-  estado: 'En curso' | 'Requiere Atención' | 'Bloqueado' | 'Resuelto';
-  prioridad: 'P1' | 'P2';
+  estado: 'En curso' | 'Requiere Atención' | 'Bloqueado' | 'Resuelto' | 'Cerrado';
+  prioridad: 'P1' | 'P2' | 'P3';
   decisiones_generadas_ids_json: string; // JSON array of decision IDs
   responsabilidades_generadas_ids_json: string; // JSON array of resp IDs
   interfaces_generadas_ids_json: string; // JSON array of interface IDs
