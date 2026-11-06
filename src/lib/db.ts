@@ -126,7 +126,7 @@ const DEFAULT_TEXTOS: Array<{
     clave: 'home.procesos.title',
     seccion: 'Portada (Sección Procesos)',
     etiqueta: 'Título de la Sección de Procesos',
-    valor: 'Los 7 Procesos de Trabajo',
+    valor: 'Procesos de Trabajo',
     tipo_campo: 'text'
   },
   {

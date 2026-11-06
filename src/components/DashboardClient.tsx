@@ -28,6 +28,7 @@ import {
   Plus,
   Check,
   ChevronDown,
+  ChevronUp,
   Target
 } from 'lucide-react';
 import Tooltip, { InfoTooltip } from '@/components/Tooltip';
@@ -79,6 +80,7 @@ export default function DashboardClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [showAllAlerts, setShowAllAlerts] = useState<boolean>(false);
 
   const activeSnapshot = selectedSnapshotId !== 'LIVE'
     ? snapshots.find(s => s.id === selectedSnapshotId) || null
@@ -517,29 +519,76 @@ export default function DashboardClient({
           <div className="flex items-start space-x-3">
             <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
             <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <h3 className="text-sm font-semibold text-amber-900">
-                  {liveAlerts.length} Observaciones Estructurales Detectadas
-                </h3>
-                <InfoTooltip
-                  content="El motor de reglas identificó puntos organizacionales que requieren diferenciación de roles o formalización."
-                  position="top"
-                  size={13}
-                />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-sm font-semibold text-amber-900">
+                    {liveAlerts.length} Observaciones Estructurales Detectadas
+                  </h3>
+                  <InfoTooltip
+                    content="El motor de reglas identificó puntos organizacionales que requieren diferenciación de roles o formalización."
+                    position="top"
+                    size={13}
+                  />
+                </div>
+                {liveAlerts.length > 4 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllAlerts(!showAllAlerts)}
+                    className="text-xs font-semibold text-amber-800 hover:text-amber-950 flex items-center space-x-1 px-2.5 py-1 rounded-md bg-amber-100/70 hover:bg-amber-100 transition-colors"
+                  >
+                    <span>{showAllAlerts ? 'Ver menos' : `Ver todas (${liveAlerts.length})`}</span>
+                    {showAllAlerts ? (
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
               </div>
               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                {liveAlerts.slice(0, 4).map((a) => (
-                  <div
-                    key={a.id}
-                    className="p-2.5 rounded-lg bg-white/80 border border-amber-200/80 text-xs flex items-start space-x-2"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                    <div>
-                      <span className="font-semibold text-slate-800">{a.titulo}: </span>
-                      <span className="text-slate-600">{a.mensaje}</span>
+                {(showAllAlerts ? liveAlerts : liveAlerts.slice(0, 4)).map((a) => {
+                  const severityBadge =
+                    a.severidad === 'alta'
+                      ? 'bg-rose-50 border-rose-200 text-rose-700'
+                      : a.severidad === 'media'
+                      ? 'bg-amber-50 border-amber-200 text-amber-700'
+                      : 'bg-blue-50 border-blue-200 text-blue-700';
+
+                  const dotColor =
+                    a.severidad === 'alta'
+                      ? 'bg-rose-500'
+                      : a.severidad === 'media'
+                      ? 'bg-amber-500'
+                      : 'bg-blue-500';
+
+                  return (
+                    <div
+                      key={a.id}
+                      className="p-2.5 rounded-lg bg-white/90 border border-amber-200/80 text-xs flex items-start justify-between space-x-2 hover:bg-white transition-colors"
+                    >
+                      <div className="flex items-start space-x-2 min-w-0">
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} mt-1.5 shrink-0`} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-800">{a.titulo}</span>
+                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-medium border uppercase tracking-wider ${severityBadge}`}>
+                              {a.severidad}
+                            </span>
+                          </div>
+                          <p className="text-slate-600 mt-0.5 leading-relaxed">{a.mensaje}</p>
+                        </div>
+                      </div>
+                      {a.frente_id && (
+                        <Link
+                          href={`/frentes/${a.frente_id}`}
+                          className="shrink-0 text-[11px] font-medium text-amber-800 hover:text-amber-950 underline decoration-amber-300 hover:decoration-amber-600 ml-2"
+                        >
+                          Ir al proceso →
+                        </Link>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -552,7 +601,7 @@ export default function DashboardClient({
           <div className="flex items-center space-x-2">
             <Layers className="w-5 h-5 text-slate-700" />
             <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-              {textos['home.frentes.title'] || `Los ${currentFrentes.length} Procesos de Trabajo`}
+              {textos['home.frentes.title'] || textos['home.procesos.title'] || 'Procesos de Trabajo'}
             </h2>
           </div>
           <Link
