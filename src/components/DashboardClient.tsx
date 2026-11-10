@@ -561,30 +561,56 @@ export default function DashboardClient({
                       ? 'bg-amber-500'
                       : 'bg-blue-500';
 
+                  const linkHref = a.enlace_accion || (a.frente_id ? `/frentes/${a.frente_id}` : undefined);
+
                   return (
                     <div
                       key={a.id}
-                      className="p-2.5 rounded-lg bg-white/90 border border-amber-200/80 text-xs flex items-start justify-between space-x-2 hover:bg-white transition-colors"
+                      className="p-3 rounded-lg bg-white/95 border border-amber-200 text-xs flex flex-col justify-between hover:bg-white hover:shadow-xs transition-all space-y-2"
                     >
-                      <div className="flex items-start space-x-2 min-w-0">
-                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} mt-1.5 shrink-0`} />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-semibold text-slate-800">{a.titulo}</span>
-                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-medium border uppercase tracking-wider ${severityBadge}`}>
-                              {a.severidad}
-                            </span>
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-start space-x-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full ${dotColor} mt-1 shrink-0`} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-slate-900">{a.titulo}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border uppercase tracking-wider ${severityBadge}`}>
+                                {a.severidad}
+                              </span>
+                            </div>
+                            <p className="text-slate-700 mt-1 leading-relaxed font-normal">{a.mensaje}</p>
                           </div>
-                          <p className="text-slate-600 mt-0.5 leading-relaxed">{a.mensaje}</p>
                         </div>
+
+                        {/* Personas involucradas identificadas */}
+                        {a.involucrados && a.involucrados.length > 0 && (
+                          <div className="pl-4 pt-1 flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                              Involucrados:
+                            </span>
+                            {a.involucrados.map((nombre, idx) => (
+                              <span
+                                key={`${nombre}-${idx}`}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[11px] font-medium text-slate-800 transition-colors"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                {nombre}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {a.frente_id && (
-                        <Link
-                          href={`/frentes/${a.frente_id}`}
-                          className="shrink-0 text-[11px] font-medium text-amber-800 hover:text-amber-950 underline decoration-amber-300 hover:decoration-amber-600 ml-2"
-                        >
-                          Ir al proceso →
-                        </Link>
+
+                      {linkHref && (
+                        <div className="pl-4 pt-1 flex justify-end border-t border-slate-100">
+                          <Link
+                            href={linkHref}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 hover:text-amber-950 underline decoration-amber-300 hover:decoration-amber-600 transition-colors"
+                          >
+                            <span>Ir al origen de la observación</span>
+                            <span>→</span>
+                          </Link>
+                        </div>
                       )}
                     </div>
                   );

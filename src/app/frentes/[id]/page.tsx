@@ -163,9 +163,27 @@ export default async function FrenteDetailPage({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {alerts.map(a => (
-              <div key={a.id} className="p-2.5 rounded-lg bg-white/90 border border-amber-200 text-xs">
-                <strong className="text-slate-900">{a.titulo}: </strong>
-                <span className="text-slate-700">{a.mensaje}</span>
+              <div key={a.id} className="p-3 rounded-lg bg-white/95 border border-amber-200 text-xs space-y-1.5">
+                <div>
+                  <strong className="text-slate-900">{a.titulo}: </strong>
+                  <span className="text-slate-700 leading-relaxed">{a.mensaje}</span>
+                </div>
+                {a.involucrados && a.involucrados.length > 0 && (
+                  <div className="pt-1 flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                      Involucrados:
+                    </span>
+                    {a.involucrados.map((nombre, idx) => (
+                      <span
+                        key={`${nombre}-${idx}`}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-medium text-slate-800"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        {nombre}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

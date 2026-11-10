@@ -298,6 +298,16 @@ export function getStructuralAlerts(): StructuralAlert[] {
   const interfaces = queryAll<Interfaz>('SELECT * FROM interfaces');
   const personas = queryAll<Persona>('SELECT * FROM personas WHERE activo = 1');
 
+  // Mapeos rápidos para nombres
+  const personasMap = new Map<string, string>();
+  for (const p of personas) {
+    personasMap.set(p.id, p.nombre);
+  }
+  const frentesMap = new Map<string, Frente>();
+  for (const f of frentes) {
+    frentesMap.set(f.id, f);
+  }
+
   // ALERTA 1: Frente sin Owner
   for (const f of frentes) {
     const hasOwner = Boolean(f.owner_id_validado || f.owner_id_propuesto);
@@ -307,31 +317,39 @@ export function getStructuralAlerts(): StructuralAlert[] {
         tipo: 'alerta1',
         severidad: 'alta',
         titulo: `Frente sin Owner: ${f.nombre_corto}`,
-        mensaje: 'Este frente no tiene un responsable único.',
+        mensaje: 'Este frente no tiene un responsable único asignado ni propuesto en la matriz.',
         frente_id: f.id,
+        frente_nombre: f.nombre_corto,
         entidad_tipo: 'frente',
-        entidad_id: f.id
+        entidad_id: f.id,
+        detalle_contexto: `Proceso ${f.nombre_corto} (${f.tipo_frente || 'Transversal'})`,
+        enlace_accion: `/frentes/${f.id}`
       });
     }
   }
 
-  // ALERTA 2: Más de un Owner principal para el mismo frente
+  // ALERTA 2: Más de un Owner principal para el mismo frente (Conflicto de Ownership)
   for (const f of frentes) {
     const ownerResps = responsabilidades.filter(r => 
       r.frente_id === f.id && 
       (r.rol_validado === 'Owner' || (!r.rol_validado && r.rol_propuesto === 'Owner'))
     );
-    const uniqueOwners = new Set(ownerResps.map(r => r.persona_id));
-    if (uniqueOwners.size > 1) {
+    const uniqueOwnerIds = Array.from(new Set(ownerResps.map(r => r.persona_id)));
+    if (uniqueOwnerIds.length > 1) {
+      const ownerNames = uniqueOwnerIds.map(pid => personasMap.get(pid) || pid);
       alerts.push({
         id: `alert-2-${f.id}`,
         tipo: 'alerta2',
         severidad: 'alta',
         titulo: `Conflicto de Ownership: ${f.nombre_corto}`,
-        mensaje: 'Hay más de un responsable final definido.',
+        mensaje: `Hay ${uniqueOwnerIds.length} personas asignadas como Owner en simultáneo: ${ownerNames.join(' y ')}.`,
         frente_id: f.id,
+        frente_nombre: f.nombre_corto,
         entidad_tipo: 'frente',
-        entidad_id: f.id
+        entidad_id: f.id,
+        involucrados: ownerNames,
+        detalle_contexto: `Ambigüedad de liderazgo en ${f.nombre_corto}`,
+        enlace_accion: `/frentes/${f.id}`
       });
     }
   }
@@ -340,32 +358,43 @@ export function getStructuralAlerts(): StructuralAlert[] {
   for (const d of decisiones) {
     const hasDecisor = Boolean(d.decisor_validado_id || d.decisor_propuesto_id || d.decisor_propuesto_nombre);
     if (!hasDecisor) {
+      const f = d.frente_id ? frentesMap.get(d.frente_id) : undefined;
       alerts.push({
         id: `alert-3-${d.id}`,
         tipo: 'alerta3',
         severidad: 'alta',
         titulo: `Decisión sin Decisor: ${d.id}`,
-        mensaje: 'Esta decisión no tiene autoridad final asignada.',
+        mensaje: `La decisión "${d.decision}" no tiene autoridad final asignada ni propuesta.`,
         frente_id: d.frente_id,
+        frente_nombre: f?.nombre_corto,
         entidad_tipo: 'decision',
-        entidad_id: d.id
+        entidad_id: d.id,
+        detalle_contexto: d.decision,
+        enlace_accion: d.frente_id ? `/frentes/${d.frente_id}` : '/decisiones'
       });
     }
   }
 
-  // ALERTA 4: Más de un decisor final
+  // ALERTA 4: Más de un decisor final (Autoridad ambigua)
   for (const d of decisiones) {
     const decisorRaw = d.decisor_propuesto_nombre || '';
     if (decisorRaw.includes(';') || decisorRaw.includes('/') || decisorRaw.toLowerCase().includes(' y ')) {
+      const f = d.frente_id ? frentesMap.get(d.frente_id) : undefined;
+      // Extraer nombres o partes de la cadena
+      const splitNames = decisorRaw.split(/;|\/|\s+y\s+/i).map(s => s.trim()).filter(Boolean);
       alerts.push({
         id: `alert-4-${d.id}`,
         tipo: 'alerta4',
         severidad: 'media',
         titulo: `Autoridad ambigua en decisión: ${d.id}`,
-        mensaje: 'Esta decisión tiene autoridad ambigua.',
+        mensaje: `Decisión con múltiples decisores: "${decisorRaw}". Conviene designar un único decisor final.`,
         frente_id: d.frente_id,
+        frente_nombre: f?.nombre_corto,
         entidad_tipo: 'decision',
-        entidad_id: d.id
+        entidad_id: d.id,
+        involucrados: splitNames.length > 0 ? splitNames : [decisorRaw],
+        detalle_contexto: d.decision,
+        enlace_accion: d.frente_id ? `/frentes/${d.frente_id}` : '/decisiones'
       });
     }
   }
@@ -374,15 +403,21 @@ export function getStructuralAlerts(): StructuralAlert[] {
   for (const r of responsabilidades) {
     const rol = (r.rol_validado || r.rol_propuesto || '').trim();
     if (!rol || rol.toLowerCase() === 'por definir' || rol.toLowerCase() === 'sin rol') {
+      const f = frentesMap.get(r.frente_id);
+      const personaNombre = personasMap.get(r.persona_id) || r.persona_id;
       alerts.push({
         id: `alert-5-${r.id}`,
         tipo: 'alerta5',
         severidad: 'media',
         titulo: `Responsabilidad sin rol: ${r.id}`,
-        mensaje: 'Existe una responsabilidad cuya función no está definida.',
+        mensaje: `${personaNombre} tiene asignada la responsabilidad "${r.responsabilidad_original}" pero su rol taxonómico está indefinido.`,
         frente_id: r.frente_id,
+        frente_nombre: f?.nombre_corto,
         entidad_tipo: 'responsabilidad',
-        entidad_id: r.id
+        entidad_id: r.id,
+        involucrados: [personaNombre],
+        detalle_contexto: r.responsabilidad_original,
+        enlace_accion: `/frentes/${r.frente_id}`
       });
     }
   }
@@ -391,15 +426,20 @@ export function getStructuralAlerts(): StructuralAlert[] {
   for (const res of resultados) {
     const hasOwner = Boolean(res.owner_id_validado || res.owner_id_propuesto);
     if (!hasOwner) {
+      const f = frentesMap.get(res.frente_id);
+      const resText = res.resultado_validado || res.resultado_propuesto;
       alerts.push({
         id: `alert-6-${res.id}`,
         tipo: 'alerta6',
         severidad: 'alta',
         titulo: `Resultado sin Owner: ${res.id}`,
-        mensaje: 'Existe un resultado sin responsable.',
+        mensaje: `El resultado esperado "${resText}" no tiene responsable asignado en ${f?.nombre_corto || 'el proceso'}.`,
         frente_id: res.frente_id,
+        frente_nombre: f?.nombre_corto,
         entidad_tipo: 'resultado',
-        entidad_id: res.id
+        entidad_id: res.id,
+        detalle_contexto: resText,
+        enlace_accion: `/frentes/${res.frente_id}`
       });
     }
   }
@@ -408,15 +448,23 @@ export function getStructuralAlerts(): StructuralAlert[] {
   for (const res of resultados) {
     const ind = (res.indicador_validado || res.indicador_sugerido || '').trim();
     if (!ind || ind.toLowerCase() === 'sin indicador') {
+      const f = frentesMap.get(res.frente_id);
+      const resText = res.resultado_validado || res.resultado_propuesto;
+      const ownerNombre = (res.owner_id_validado ? personasMap.get(res.owner_id_validado) : null) || 
+                          (res.owner_id_propuesto ? personasMap.get(res.owner_id_propuesto) : null);
       alerts.push({
         id: `alert-7-${res.id}`,
         tipo: 'alerta7',
         severidad: 'media',
         titulo: `Resultado sin indicador: ${res.id}`,
-        mensaje: 'Existe un resultado cuya evolución no puede observarse.',
+        mensaje: `El resultado "${resText}" no cuenta con una métrica o indicador observable.`,
         frente_id: res.frente_id,
+        frente_nombre: f?.nombre_corto,
         entidad_tipo: 'resultado',
-        entidad_id: res.id
+        entidad_id: res.id,
+        involucrados: ownerNombre ? [ownerNombre] : undefined,
+        detalle_contexto: resText,
+        enlace_accion: `/frentes/${res.frente_id}`
       });
     }
   }
@@ -426,33 +474,44 @@ export function getStructuralAlerts(): StructuralAlert[] {
     const input = (i.entrega_input || '').trim();
     const output = (i.devuelve_output || '').trim();
     if (!input || !output) {
+      const deNombre = i.de_persona_nombre || (i.de_persona_id ? personasMap.get(i.de_persona_id) : 'Emisor no especificado');
+      const haciaNombre = i.hacia_persona_nombre || (i.hacia_persona_id ? personasMap.get(i.hacia_persona_id) : 'Receptor no especificado');
+      const faltante = !input && !output ? 'el input que se entrega ni el output que se devuelve' : !input ? 'qué se entrega (input)' : 'qué se devuelve (output)';
+      const involucradosInterfaces: string[] = [deNombre, haciaNombre].filter((n): n is string => Boolean(n));
       alerts.push({
         id: `alert-8-${i.id}`,
         tipo: 'alerta8',
         severidad: 'baja',
-        titulo: `Interfaz con flujo incompleto: ${i.id}`,
-        mensaje: 'No está claro qué entrega una persona a la otra.',
+        titulo: `Interfaz incompleta: ${deNombre} ⇄ ${haciaNombre}`,
+        mensaje: `Falta definir ${faltante} entre ${deNombre} y ${haciaNombre}.`,
         entidad_tipo: 'interfaz',
-        entidad_id: i.id
+        entidad_id: i.id,
+        involucrados: involucradosInterfaces,
+        detalle_contexto: `Flujo bilateral entre ${deNombre} y ${haciaNombre}`,
+        enlace_accion: '/interfaces'
       });
     }
   }
 
   // ALERTA 9: Participación excesiva
   for (const f of frentes) {
-    const participants = new Set(
-      responsabilidades.filter(r => r.frente_id === f.id).map(r => r.persona_id)
-    );
-    if (participants.size >= Math.max(5, personas.length - 1)) {
+    const fResps = responsabilidades.filter(r => r.frente_id === f.id);
+    const participantIds = Array.from(new Set(fResps.map(r => r.persona_id)));
+    if (participantIds.length >= Math.max(5, personas.length - 1)) {
+      const participantNames = participantIds.map(pid => personasMap.get(pid) || pid);
       alerts.push({
         id: `alert-9-${f.id}`,
         tipo: 'alerta9',
         severidad: 'info',
         titulo: `Alta densidad de participantes: ${f.nombre_corto}`,
-        mensaje: 'Este proceso presenta una concentración alta de participantes. Revisar si las funciones están suficientemente diferenciadas.',
+        mensaje: `Este proceso concentra ${participantIds.length} participantes (${participantNames.slice(0, 4).join(', ')}${participantNames.length > 4 ? '...' : ''}). Revisar si las funciones están suficientemente diferenciadas.`,
         frente_id: f.id,
+        frente_nombre: f.nombre_corto,
         entidad_tipo: 'frente',
-        entidad_id: f.id
+        entidad_id: f.id,
+        involucrados: participantNames,
+        detalle_contexto: `${participantIds.length} participantes activos`,
+        enlace_accion: `/frentes/${f.id}`
       });
     }
   }

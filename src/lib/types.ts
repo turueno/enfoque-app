@@ -135,8 +135,12 @@ export interface StructuralAlert {
   titulo: string;
   mensaje: string;
   frente_id?: string;
+  frente_nombre?: string;
   entidad_tipo: string;
   entidad_id: string;
+  involucrados?: string[];
+  detalle_contexto?: string;
+  enlace_accion?: string;
 }
 
 export interface HipotesisSolucion {

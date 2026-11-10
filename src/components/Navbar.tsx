@@ -34,11 +34,13 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
   const { currentUser, setCurrentUser, availableUsers } = useUser();
   const [textosMap, setTextosMap] = useState<Record<string, string>>(initialTextosMap);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [operarDropdownOpen, setOperarDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ total: number; items: { id: string; tipo: string; titulo: string; subtitulo: string; enlace: string }[] } | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const operarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsAdmin(isUserAdmin());
@@ -64,11 +66,14 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Close search dropdown on click outside
+  // Close search and dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setSearchResults(null);
+      }
+      if (operarRef.current && !operarRef.current.contains(event.target as Node)) {
+        setOperarDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -86,49 +91,94 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
     return () => window.removeEventListener('enfoque:textos-updated', handler);
   }, []);
 
-  const navItems = [
-    { name: textosMap['nav.item.inicio'] || 'Inicio', href: '/', icon: Compass },
-    { name: textosMap['nav.item.agenda'] || 'Agenda', href: '/agenda', icon: Calendar },
-    { name: textosMap['nav.item.enfoque'] || 'Enfoque', href: '/mi-enfoque', icon: User },
+  // Nivel 2: Solo secciones de Consulta y Exploración
+  const consultaItems = [
+    { name: textosMap['nav.item.enfoque'] || 'Mi Enfoque', href: '/mi-enfoque', icon: User },
     { name: textosMap['nav.item.mapa'] || 'Mapa', href: '/mapa', icon: Grid },
     { name: textosMap['admin.entidades.subtab.procesos'] || 'Procesos', href: '/procesos', icon: Layers },
     { name: textosMap['admin.entidades.subtab.personas'] || 'Personas', href: '/personas', icon: Users },
-    { name: textosMap['admin.entidades.subtab.decisiones'] || 'Decisiones', href: '/decisiones', icon: GitCommit },
-    { name: textosMap['admin.entidades.subtab.interfaces'] || 'Relaciones', href: '/interfaces', icon: ArrowLeftRight },
-    { name: textosMap['nav.item.validar'] || 'Validar', href: '/validar', icon: CheckCircle2 },
-    { name: textosMap['admin.entidades.subtab.principios'] || 'Principios', href: '/principios', icon: BookOpen },
-    { name: textosMap['nav.item.revisor'] || 'Revisor IA', href: '/revisor', icon: Sparkles },
-    { name: textosMap['nav.item.auditoria'] || 'Auditoría', href: '/auditoria', icon: History },
-    { name: textosMap['nav.item.ajustes'] || 'Ajustes', href: '/admin', icon: Settings }
+    { name: textosMap['admin.entidades.subtab.principios'] || 'Principios transversales', href: '/principios', icon: BookOpen },
   ];
+
+  // Acciones dentro del menú '+ Operar'
+  const operarItems = [
+    {
+      name: textosMap['nav.item.validar'] || 'Validar cambios',
+      desc: 'Revisar capas, comparar diferencias y aprobar propuestas',
+      href: '/validar',
+      icon: CheckCircle2,
+      badge: 'Capas'
+    },
+    {
+      name: textosMap['admin.entidades.subtab.decisiones'] || 'Decisiones',
+      desc: 'Registrar, consultar y calibrar decisiones clave',
+      href: '/decisiones',
+      icon: GitCommit
+    },
+    {
+      name: textosMap['admin.entidades.subtab.interfaces'] || 'Relaciones',
+      desc: 'Mapear dependencias, interfaces y acuerdos inter-áreas',
+      href: '/interfaces',
+      icon: ArrowLeftRight
+    },
+  ];
+
+  const isInicioActive = pathname === '/';
+  const isAgendaActive = pathname.startsWith('/agenda');
+  const isRevisorActive = pathname.startsWith('/revisor');
+  const isOperarActive = ['/validar', '/decisiones', '/interfaces'].some(p => pathname.startsWith(p));
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <Link href="/" className="flex items-center space-x-3 group">
-              {/* Official Brand Logo */}
+      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Nivel 1: Header Principal */}
+        <div className="flex items-center justify-between h-16 gap-3">
+          {/* Logo + Marca ENFOQUE (sin texto en cursivas) */}
+          <div className="flex items-center space-x-3 shrink-0">
+            <Link href="/" className="flex items-center space-x-3 group py-1" title="Ir al Inicio">
               <img
                 src="/logo.png"
                 alt="Provokers"
-                style={{ height: '28px', width: 'auto', maxHeight: '28px', objectFit: 'contain' }}
-                className="h-7 w-auto object-contain transition-transform group-hover:scale-105"
+                style={{ height: '30px', width: 'auto', maxHeight: '30px', objectFit: 'contain' }}
+                className="h-7.5 w-auto object-contain transition-transform group-hover:scale-105"
               />
               <div className="border-l border-slate-300 pl-3">
                 <span className="font-bold text-[#191919] text-lg tracking-tight group-hover:text-[#F6911E] transition-colors">
                   {textosMap['nav.app_name'] || 'ENFOQUE'}
                 </span>
-                <span className="hidden sm:inline-block ml-2 text-xs text-slate-500 font-editorial border-l border-slate-300 pl-2">
-                  {textosMap['nav.app_subtitle'] || 'Gobernanza & Movimiento'}
-                </span>
               </div>
             </Link>
           </div>
 
+          {/* Botones Preponderantes: Inicio y Agenda */}
+          <div className="flex items-center space-x-2 shrink-0">
+            <Link
+              href="/"
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                isInicioActive
+                  ? 'bg-[#191919] text-[#FFAA34]'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Compass className={`w-4 h-4 ${isInicioActive ? 'text-[#FFAA34]' : 'text-slate-500'}`} />
+              <span>{textosMap['nav.item.inicio'] || 'Inicio'}</span>
+            </Link>
+
+            <Link
+              href="/agenda"
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                isAgendaActive
+                  ? 'bg-[#191919] text-[#FFAA34]'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Calendar className={`w-4 h-4 ${isAgendaActive ? 'text-[#FFAA34]' : 'text-slate-500'}`} />
+              <span>{textosMap['nav.item.agenda'] || 'Agenda'}</span>
+            </Link>
+          </div>
+
           {/* Search bar */}
-          <div className="flex-1 max-w-md mx-6 relative" ref={searchRef}>
+          <div className="flex-1 max-w-md mx-2 relative" ref={searchRef}>
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -180,95 +230,167 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
             )}
           </div>
 
-          {/* Settings button */}
-          <Link
-            href="/admin"
-            title={isAdmin ? "Panel de Administración (Sesión Activa)" : "Ajustes (Requiere acceso de Administrador)"}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border transition-all text-xs font-semibold ${
-              pathname.startsWith('/admin')
-                ? 'bg-[#191919] text-white border-[#191919] shadow-sm'
-                : 'bg-white hover:bg-orange-50/80 border-slate-200 text-slate-700 hover:text-[#191919] hover:border-[#F6911E]/50'
-            }`}
-          >
-            {isAdmin ? (
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            ) : (
-              <Lock className="w-3.5 h-3.5 text-slate-400" />
-            )}
-            <span className="hidden sm:inline">Ajustes</span>
-          </Link>
+          {/* Bloque Superior Derecho: Operar + Revisor IA + Ajustes + Usuario */}
+          <div className="flex items-center space-x-2 shrink-0">
+            {/* Botón de Acción '+ Operar' (Menú Desplegable) */}
+            <div className="relative" ref={operarRef}>
+              <button
+                onClick={() => setOperarDropdownOpen(!operarDropdownOpen)}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                  isOperarActive
+                    ? 'bg-[#F6911E] text-white hover:bg-[#e07f15]'
+                    : 'bg-amber-50 text-amber-900 border border-amber-200/80 hover:bg-amber-100'
+                }`}
+                title="Acciones de edición y calibración del sistema"
+              >
+                <span>+ Operar</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${operarDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
 
-          {/* User selector (Google Workspace simulation) */}
-          <div className="relative">
-            <button
-              onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors text-left"
-            >
-              <div className="w-6 h-6 rounded-full bg-[#191919] text-[#F6911E] font-bold text-xs flex items-center justify-center">
-                {currentUser.nombre.charAt(0)}
-              </div>
-              <div className="hidden md:block">
-                <div className="text-xs font-semibold text-[#191919] leading-tight">
-                  {currentUser.nombre}
-                </div>
-                <div className="text-[10px] text-slate-500 leading-none">
-                  Google Workspace
-                </div>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-            </button>
-
-            {userDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-50">
-                <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 rounded-t-xl">
-                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                    Conectado con Workspace
+              {operarDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1.5 mb-1">
+                    Acciones sobre la herramienta
                   </div>
-                  <div className="text-xs font-semibold text-slate-900 mt-0.5">
+                  {operarItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname.startsWith(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOperarDropdownOpen(false)}
+                        className={`flex items-start space-x-2.5 px-3 py-2 text-xs transition-colors ${
+                          isActive ? 'bg-amber-50 text-amber-950 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="mt-0.5 p-1 rounded-md bg-slate-100 text-[#191919]">
+                          <Icon className="w-3.5 h-3.5 text-[#F6911E]" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-[#191919]">{item.name}</span>
+                            {item.badge && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold">
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-normal leading-tight mt-0.5">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Revisor IA (Herramienta Asistente) */}
+            <Link
+              href="/revisor"
+              title="Revisor Inteligente de Congruencia y Desalineaciones"
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                isRevisorActive
+                  ? 'bg-purple-700 text-white border-purple-700 shadow-sm'
+                  : 'bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-600 group-hover:scale-110 transition-transform" />
+              <span>{textosMap['nav.item.revisor'] || 'Revisor IA'}</span>
+            </Link>
+
+            {/* Settings button */}
+            <Link
+              href="/admin"
+              title={isAdmin ? "Panel de Administración y Auditoría" : "Ajustes (Requiere acceso de Administrador)"}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border transition-all text-xs font-semibold ${
+                pathname.startsWith('/admin')
+                  ? 'bg-[#191919] text-white border-[#191919] shadow-sm'
+                  : 'bg-white hover:bg-orange-50/80 border-slate-200 text-slate-700 hover:text-[#191919] hover:border-[#F6911E]/50'
+              }`}
+            >
+              {isAdmin ? (
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              ) : (
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+              )}
+              <span className="hidden sm:inline">Ajustes</span>
+            </Link>
+
+            {/* User selector (Google Workspace simulation) */}
+            <div className="relative">
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors text-left"
+              >
+                <div className="w-6 h-6 rounded-full bg-[#191919] text-[#F6911E] font-bold text-xs flex items-center justify-center">
+                  {currentUser.nombre.charAt(0)}
+                </div>
+                <div className="hidden md:block">
+                  <div className="text-xs font-semibold text-[#191919] leading-tight">
                     {currentUser.nombre}
                   </div>
-                  <div className="text-[11px] text-slate-500 truncate">
-                    {currentUser.email}
+                  <div className="text-[10px] text-slate-500 leading-none">
+                    Google Workspace
                   </div>
                 </div>
-                <div className="py-1">
-                  <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                    Cambiar identidad (Enfoque)
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+              </button>
+
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-50">
+                  <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 rounded-t-xl">
+                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Conectado con Workspace
+                    </div>
+                    <div className="text-xs font-semibold text-slate-900 mt-0.5">
+                      {currentUser.nombre}
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      {currentUser.email}
+                    </div>
                   </div>
-                  {availableUsers.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => {
-                        setCurrentUser(u);
-                        setUserDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs flex items-center space-x-2.5 transition-colors ${
-                        u.id === currentUser.id
-                          ? 'bg-blue-50 text-blue-900 font-semibold'
-                          : 'text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold">
-                        {u.nombre.charAt(0)}
-                      </span>
-                      <div className="truncate flex-1">
-                        <div>{u.nombre}</div>
-                        <div className="text-[10px] text-slate-400">{u.rol_funcional}</div>
-                      </div>
-                      {u.id === currentUser.id && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                      )}
-                    </button>
-                  ))}
+                  <div className="py-1">
+                    <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Cambiar identidad (Enfoque)
+                    </div>
+                    {availableUsers.map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => {
+                          setCurrentUser(u);
+                          setUserDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs flex items-center space-x-2.5 transition-colors ${
+                          u.id === currentUser.id
+                            ? 'bg-blue-50 text-blue-900 font-semibold'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold">
+                          {u.nombre.charAt(0)}
+                        </span>
+                        <div className="truncate flex-1">
+                          <div>{u.nombre}</div>
+                          <div className="text-[10px] text-slate-400">{u.rol_funcional}</div>
+                        </div>
+                        {u.id === currentUser.id && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Secondary Navigation Row */}
-        <nav className="flex space-x-1 sm:space-x-3 overflow-x-auto py-2 border-t border-slate-100 scrollbar-none text-xs">
-          {navItems.map((item) => {
+        {/* Nivel 2: Barra de Consulta y Exploración (Despejada y Limpia) */}
+        <nav className="flex items-center space-x-1 sm:space-x-3 overflow-x-auto py-2 border-t border-slate-100 scrollbar-none text-xs">
+          {consultaItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
             return (
@@ -278,7 +400,7 @@ export default function Navbar({ initialTextosMap = {} }: NavbarProps) {
                 className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap font-medium transition-all ${
                   isActive
                     ? 'bg-[#191919] text-white shadow-sm border-b-2 border-[#F6911E]'
-                    : 'text-slate-600 hover:text-[#191919] hover:bg-orange-50/60'
+                    : 'text-slate-600 hover:text-[#191919] hover:bg-slate-100'
                 }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#F6911E]' : 'text-slate-400'}`} />
